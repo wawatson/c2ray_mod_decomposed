@@ -42,8 +42,8 @@ module evolve
   use photonstatistics, only: state_before, calculate_photon_statistics, &
        photon_loss, LLS_loss, report_photonstatistics, state_after, total_rates, &
        total_ionizations, update_grandtotal_photonstatistics
-  use c2ray_parameters, only: convergence_fraction
-  use c2ray_parameters, only: subboxsize, max_subbox
+  use c2ray_parameters, only: convergence_fraction, S_star_nominal
+  use c2ray_parameters, only: subboxsize, max_subbox, isothermal
   use radiation, only: S_star
 
   implicit none
@@ -338,8 +338,8 @@ contains
     write(iterdump) xh_av
     write(iterdump) xh_intermed
     if (.not.isothermal) then
-       write(iterdump) phiheat
-       write(iterdump) temperature_grid
+       !write(iterdump) phiheat
+       !write(iterdump) temperature_grid
     endif
     close(iterdump)
 
@@ -393,8 +393,8 @@ contains
           read(iterdump) xh_av
           read(iterdump) xh_intermed
           if (.not.isothermal) then
-             read(iterdump) phiheat
-             read(iterdump) temperature_grid
+             !read(iterdump) phiheat
+             !read(iterdump) temperature_grid
           endif
 
           close(iterdump)
@@ -980,79 +980,34 @@ contains
        last_r(:)=min(srcpos(:,ns)+subboxsize*nbox,lastpos_r(:))
        last_l(:)=max(srcpos(:,ns)-subboxsize*nbox,lastpos_l(:))
 
-       ! OpenMP: if we have multiple OpenMP threads (nthreads > 1) we 
-       ! parallelize over the threads by doing independent parts of
-       ! the mesh.
-       if (nthreads > 1) then ! OpenMP parallelization
+       !> WW: I have stripped the original OpenMP loop out from evolve8.F90 
+       !! A new OpenMP (and MPI) implementation is in progress. In this
+       !! version of the code MPI is as it originally was and there is
+       !! no OpenMP implemented.
 
-          ! First do source point (on first pass)
-          if (nbox == 1) then
-             rtpos(:)=srcpos(:,ns)
-             call evolve0D(dt,rtpos,ns,niter)
-          endif
+       ! No OpenMP parallelization
 
-          ! do independent areas of the mesh in parallel using OpenMP
-          !$omp parallel default(shared) private(tn)
-          !!!reduction(+:photon_loss_src)
+       ! 1. transfer in the upper part of the grid 
+       !    (srcpos(3)-plane and above)
+       do k=srcpos(3,ns),last_r(3)
+	 rtpos(3)=k
+	 call evolve2D(dt,rtpos,ns,niter)
+       end do
 
-          ! Find out your thread number
-#ifdef MY_OPENMP
-          tn=omp_get_thread_num()+1
-#else
-          tn=1
-#endif
-          
-          ! Then do the the axes
-          !$omp do schedule(dynamic,1)
-          do naxis=1,6
-             call evolve1D_axis(dt,ns,niter,naxis)
-          enddo
-          !$omp end do
-          
-          ! Then the source planes
-          !$omp do schedule (dynamic,1)
-          do nplane=1,12
-             call evolve2D_plane(dt,ns,niter,nplane)
-          end do
-          !$omp end do
-          
-          ! Then the quadrants
-          !$omp do schedule (dynamic,1)
-          do nquadrant=1,8
-             call evolve3D_quadrant(dt,ns,niter,nquadrant)
-          end do
-          !$omp end do
-          
-          !$omp end parallel
-          ! Collect photon losses for each thread
-          do nnt=1,nthreads
-             photon_loss_src(:)=photon_loss_src(:) + &
-                  photon_loss_src_thread(:,nnt)
-          enddo
+       ! 2. transfer in the lower part of the grid (below srcpos(3))
+       do k=srcpos(3,ns)-1,last_l(3),-1
+	 rtpos(3)=k
+	 call evolve2D(dt,rtpos,ns,niter)
+       end do
 
-       else ! No OpenMP parallelization
+       ! No OpenMP threads so we use position 1
+       ! GM/121127: previous versions of the code did not have
+       ! the variable tn set to 1 if we were not running OpenMP.
+       ! This led to non-photon-conservations (and should have
+       ! led to memory errors...)
+       photon_loss_src(:)=photon_loss_src_thread(:,1)
 
-          ! 1. transfer in the upper part of the grid 
-          !    (srcpos(3)-plane and above)
-          do k=srcpos(3,ns),last_r(3)
-             rtpos(3)=k
-             call evolve2D(dt,rtpos,ns,niter)
-          end do
-          
-          ! 2. transfer in the lower part of the grid (below srcpos(3))
-          do k=srcpos(3,ns)-1,last_l(3),-1
-             rtpos(3)=k
-             call evolve2D(dt,rtpos,ns,niter)
-          end do
 
-          ! No OpenMP threads so we use position 1
-          ! GM/121127: previous versions of the code did not have
-          ! the variable tn set to 1 if we were not running OpenMP.
-          ! This led to non-photon-conservations (and should have
-          ! led to memory errors...)
-          photon_loss_src(:)=photon_loss_src_thread(:,1)
-
-       endif
     enddo
 
     ! Record the final photon loss, this is the photon loss that leaves

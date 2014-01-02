@@ -36,12 +36,11 @@
 #-------------------------------------------------------
 
 # Compiler
-#FC = gfortran # GNU compiler
-#MPIFC = mpif90 # MPI compiler
+FC = gfortran # GNU compiler
+MPIFC = mpif90 # MPI compiler
 
 # F90 options (ifort)
-#GFORTFLAGS = -O3 -DGFORT 
->>>>>>> ab16e0dc5b610b3f04accaa4766f93610abb771d
+GFORTFLAGS = -O3 #-DGFORT 
 # Processor dependent optimization
 #F90FLAGS1 = $(GFORTFLAGS) 
 
@@ -60,12 +59,12 @@ MPI_FLAGS = -DMPI #
 
 # F90 options (ifort)
 #IFORTFLAGS = -O0 -g -DIFORT -u -fpe0 -p
-IFORTFLAGS = -O3 -vec_report -u -fpe0 -ipo -DIFORT -shared-intel #-check all -traceback
+#IFORTFLAGS = -O3 -vec_report -u -fpe0 -ipo -DIFORT -shared-intel #-check all -traceback
 #IFORTFLAGS = -O3 -vec_report -u -fpe0 -ipo -mcmodel=medium -shared-intel -DIFORT #-check all -traceback
 # Processor dependent optimization
 #F90FLAGS1 = $(IFORTFLAGS) 
 #F90FLAGS1 = -xW $(IFORTFLAGS) 
-F90FLAGS1 = -xO $(IFORTFLAGS) 
+#F90FLAGS1 = -xO $(IFORTFLAGS) 
 #F90FLAGS1 = -xT $(IFORTFLAGS) # Laptop 
 #F90FLAGS1 = -xB $(IFORTFLAGS)
 
@@ -123,8 +122,8 @@ F90FLAGS1 = -xO $(IFORTFLAGS)
 
 #LDR     = $(F90)
 
-LDFLAGS = $(F90FLAGS) -L/afs/astro.su.se/pkg/intel/Compiler/11.1/056/lib/intel64/
-LIBS = -lirc -limf
+#LDFLAGS = $(F90FLAGS) -L/afs/astro.su.se/pkg/intel/Compiler/11.1/056/lib/intel64/
+#LIBS = -lirc -limf
 
 #-------------------------------------------------------
 
