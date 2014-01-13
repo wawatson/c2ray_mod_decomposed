@@ -187,7 +187,7 @@ contains
     call system_clock(wallclock1)
 
      ! Initial state (for photon statistics)
-    call state_before (xh)
+    call state_before(xh)
 
     ! initialize average and intermediate results to initial values
     if (restart == 0) then
@@ -489,11 +489,10 @@ contains
     ! We can do this in two ways, depending on
     ! the number of processors. For many processors
     ! the master-slave setup should be more efficient.
-    if (npr > min_numproc_master_slave) then
-       call do_grid_master_slave (dt,niter)
-    else
-       call do_grid_static (dt,niter)
-    endif
+    
+    !> WW: removed master slave MPI option
+
+       call do_grid_static(dt,niter)
 
 #ifdef MPI
     ! accumulate (sum) the MPI distributed photon losses
@@ -1659,7 +1658,7 @@ contains
     ! Use the collected photo-ionization rates
     phih=phih_grid(pos(1),pos(2),pos(3))
 
-    call do_chemistry (dt, ndens_p, yh, yh_av, yh0, phih, &
+    call do_chemistry(dt, ndens_p, yh, yh_av, yh0, phih, &
          0.0_dp, 0.0_dp, 0.0_dp, pos, 0 , local=.false.)
 
     ! Test for global convergence using the time-averaged neutral fraction.
@@ -1730,7 +1729,7 @@ contains
     avg_temper=temper
 
     ! Initialize local clumping (if type of clumping is appropriate)
-    if (type_of_clumping == 5) call clumping_point (pos(1),pos(2),pos(3))
+    if (type_of_clumping == 5) call clumping_point(pos(1),pos(2),pos(3))
     
     nit=0
     do 
@@ -1747,7 +1746,7 @@ contains
        de=electrondens(ndens_p,yh_av)
 
        ! Find total photo-ionization rate
-       if (local) then
+       if(local) then
           
           ! Calculate (time averaged) column density of cell
           coldensh_cell=coldens(path,yh_av(0),ndens_p)
@@ -1769,7 +1768,7 @@ contains
           !     photon_loss(1)/(vol*yh_av(0)*ndens_p)
           ! GM/110225: New approach to lost photons, taking into
           ! account optical depth of cells. See notes.
-          if (add_photon_losses) then
+          if(add_photon_losses) then
              NormFlux(0)=sum(photon_loss(:))/S_star_nominal
              ! Calculate (time averaged) column density of cell
              coldensh_cell=coldens(dr(1),yh_av(0),ndens_p)

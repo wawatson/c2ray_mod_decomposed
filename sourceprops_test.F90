@@ -28,6 +28,10 @@ contains
     ! Authors: Garrelt Mellema, Ilian Iliev
     ! Update: 30-Jan-2008 (20-Sep-2006 (3-jan-2005, 15-Apr-2004))
 
+
+    !> WW: I have updated this file to only distribute the sources to 
+    !! the node they belong to spatially
+
     ! For random permutation of sources
     use  m_ctrper
 
@@ -35,6 +39,9 @@ contains
     real(kind=dp),intent(in) :: lifetime2 ! time step
     integer,intent(in) :: nz
     integer,intent(in) :: restart
+
+    integer :: source_count_for_node(:)
+    integer :: source_count_on_node
 
     character(len=512) :: sourcelistfile,sourcelistfilesuppress
     integer :: ns,ns0

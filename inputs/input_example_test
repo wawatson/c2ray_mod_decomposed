@@ -3,5 +3,5 @@
 n            !restart (y/n)
 n            ! restart from intermediate time (y/n)
 1            !from which slice to start/restart
-1            !number of timesteps per density/source slice
+4            !number of timesteps per density/source slice
 1            !number of outputs per density/source slice
