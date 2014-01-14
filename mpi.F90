@@ -66,7 +66,7 @@ module my_mpi
   integer,public :: MPI_COMM_NEW    ! the (new) communicator
   integer,public,dimension(MPI_STATUS_SIZE) :: mympi_status ! status array
 
-  logical,parameter :: reorder=.TRUE. !< reorder the mpi structure (for hydro)
+  logical,parameter :: reorder=.TRUE. !< NEEDS TO BE TRUE FOR NEW MPI VERSION -WW
   integer,dimension(NPDIM),public :: dims ! number of processors in 
                                              !  each dimension
   integer,dimension(NPDIM),public :: grid_struct ! coordinates of 
@@ -88,7 +88,7 @@ contains
     integer :: tn
     character(len=100) :: hostname
 
-    call mpi_basic ()
+    call mpi_basic()
 
     if (rank == 0) then
        if (logf /= 6) then
@@ -98,6 +98,7 @@ contains
        endif
        write(unit=logf,fmt="(A)") "Log file for C2-Ray run"
        write(unit=logf,fmt=*) " Number of MPI ranks used: ",npr
+       
     endif
 
     ! Find number of OpenMP threads (needed to establish OpenMP character
@@ -151,7 +152,21 @@ contains
 #endif
 
     if (reorder) then
-       call mpi_topology ()
+       call mpi_topology()
+
+       
+       !> WW: we now test to make sure we are running on a cubic number
+       !! of nodes - this is to make sure the new MPI implementation
+       !! is working... this check WILL ABORT THE PROGRAM if the
+       !! number of nodes returned is not a cubic number...
+
+       if(dims(1) .ne. dims(2) .or. dims(2) .ne. dims(3)) then
+
+	 write(*,*) 'Exiting - non cubic MPI layout...'
+	 call MPI_ABORT(MPI_COMM_NEW,ierror)
+
+       endif
+
     else
        MPI_COMM_NEW=MPI_COMM_WORLD
     endif
@@ -185,8 +200,6 @@ contains
     logical,dimension(NPDIM) :: periods ! for periodic grid
     logical                  :: reorder ! reorder the MPI_COMM_WORLD
     integer          :: ierror=0
-
-!TODO UNDO
 
     integer :: node_count
 
@@ -222,7 +235,8 @@ contains
 
     do node_count = 0, npr-1
 
-      if(rank .eq. node_count) print*, "NODE ",rank," COORDs: ",grid_struct(:)
+      if(rank .eq. node_count) print*, "NODE ",rank," COORDs:",&
+	  &grid_struct(:),dims(:)
       call MPI_BARRIER(MPI_COMM_NEW,ierror)
 
     enddo

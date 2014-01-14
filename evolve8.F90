@@ -36,7 +36,7 @@ module evolve
   use material, only: temper
   use material, only: get_temperature_point, set_temperature_point
   !use material, only: set_final_temperature_point, isothermal
-  use sourceprops, only: NumSrc, srcpos, NormFlux !SrcSeries
+  use sourceprops, only: NumSrc, srcpos, NormFlux,srcTarget !SrcSeries
   use radiation, only: NumFreqBnd
   use cosmology, only: time2zred
   use photonstatistics, only: state_before, calculate_photon_statistics, &
@@ -491,6 +491,8 @@ contains
     ! the master-slave setup should be more efficient.
     
     !> WW: removed master slave MPI option
+    !! edited do_grid_static so nodes now only
+    !! process sources in their domains... 
 
        call do_grid_static(dt,niter)
 
@@ -889,15 +891,19 @@ contains
     integer :: ns1
 
     ! Source Loop - distributed for the MPI nodes
-    do ns1=1+rank,NumSrc,npr
+    do ns1=1,NumSrc
+
+      if(srcTarget(ns1) .eq. rank) then
 #ifdef MPILOG
-       ! Report
-       write(logf,*) 'Processor ',rank,' received: ',ns1
-       write(logf,*) ' that is source ',ns1 !SrcSeries(ns1)
-       write(logf,*) ' at:',srcpos(:,ns1)
-       flush(logf)
+	! Report
+	write(logf,*) 'Processor ',rank,' doing: ',ns1
+	write(logf,*) ' that is source ',ns1 !SrcSeries(ns1)
+	write(logf,*) ' at:',srcpos(:,ns1)
+	flush(logf)
 #endif
-       call do_source(dt,ns1,niter)
+	call do_source(dt,ns1,niter)
+
+      endif
     enddo
 
   end subroutine do_grid_static

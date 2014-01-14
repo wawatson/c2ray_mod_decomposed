@@ -114,7 +114,7 @@ contains
             trim(adjustl(z_str))//"-"//trim(adjustl(id_str))// &
             trim(adjustl(sourcelistfilesuppress_base))
 
-       call establish_number_of_active_sources (restart)
+       call establish_number_of_active_sources(restart)
 
     endif ! end of rank 0 test
 
@@ -136,14 +136,14 @@ contains
 
        ! Fill in the source arrays
        if (rank == 0) then
-          call read_in_sources (restart)
+          call read_in_sources(restart)
     
           ! Set cumulative number of uv photons to zero if this is not the
           ! first redshift for which sources are active (this way cumulative_uv
           ! can be used in all cases).
           ! New version: cumulative_uv is slowly reduced
           !if (Prev_NumSrc /= 0) cumulative_uv=0.0
-          call assign_uv_luminosities (lifetime2,nz)
+          call assign_uv_luminosities(lifetime2,nz)
 
           write(logf,*) 'Source lifetime=', lifetime2/(1e6*YEAR),' Myr'
           write(logf,*) 'Total flux= ',sum(NormFlux(1:NumSrc))*S_star_nominal,' s^-1'

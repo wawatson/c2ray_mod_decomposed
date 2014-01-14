@@ -212,7 +212,7 @@ contains
 #endif
 
        ! Initialize LLS parametets
-       call LLS_init ()
+       call LLS_init()
     endif
 
   end subroutine mat_ini
