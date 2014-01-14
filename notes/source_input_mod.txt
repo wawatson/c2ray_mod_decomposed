@@ -1,0 +1,34 @@
+Notes on altering how the source reading and distribution needs to be altered.
+
+CURRENT: 
+
+The code reads the source list on node 0 and distributes the entire list to all the nodes. The parellelism that the code employs is to split the sources up across the nodes so that each node only handles a subset of the sources. The contribution to ionisation from each source is then calculated on the entire grid across the simulation.
+
+NEW: 
+
+Based on a spatial domain decomposition (as per cubep3m input) each node will only calculate the contribution to reionisation from the sources that fall within their domains. The sources can be read in on node 0, which then calculates where the source belongs -- i.e. to which node -- and then sends it to the node in question.
+
+NOTES: 
+
+For development purposes the code can remain almost identical, as the sources are currently split equally across the nodes (assuming the master-slave option is not employed) then here we can implement a set-up, as an intermediate step, where the sources are split based on their spatial location.
+
+RELEVANT VARIABLES:
+
+sourceprops_LG.F90 / sourceprops_cubep3m.F90 / sourceprops_cubep3m_compr.F90 / sourceprops_gadget.F90 / sourceprops_pmfast_compr.F90 / sourceprops_test.F90  : sourcelistfile=trim(adjustl(dir_src))//"test_sources.dat" --> this is the input file for the sources. Can stay as is.
+
+LG.F90 / cubep3m.F90 /gadget.F90 / pmfast.F90 / sourceprops_LG.F90 / sourceprops_cubep3m.F90 / sourceprops_cubep3m_compr.F90 / sourceprops_gadget.F90 / sourceprops_pmfast_compr.F90 / sourceprops_test.F90 / test.F90 : character(len=180),public :: dir_src(_path or _name) --> path/name to source file. Can stay as is.
+
+C2Ray.F90 / evolve4_periodic_compr.F90 / evolve8.F90 / output.F90 / output_compr.F90 / photonstatistics.F90 / sourceprops_LG.F90 / sourceprops_cubep3m.F90 / sourceprops_cubep3m_compr.F90 / sourceprops_gadget.F90 / sourceprops_pmfast_compr.F90 / sourceprops_test.F90 : NumSrc --> this is the TOTAL number of sources in the simulation. This variable will need to be split into a global total and local totals on each node. Needs to be carefully considered in each place where it currently occurs. Various dynamically allocate arrays are sized based on this number. These will need to be set to the relevent local source count. evolve8.F90 will need to be carefully edited.
+
+evolve4_periodic_compr.F90 / evolve8.F90 / output.F90 / output_compr.F90 / sourceprops_LG.F90 / sourceprops_cubep3m.F90 / sourceprops_cubep3m_compr.F90 / sourceprops_gadget.F90 / sourceprops_pmfast_compr.F90 / sourceprops_test.F90 : srcpos --> array that holds source positions. Allocated as: allocate(srcpos(3,NumSrc)). Will need to be set as a local array on each node. evolve8.F90 will need to be carefully edited.
+
+sourceprops_cubep3m_compr.F90 / sourceprops_gadget.F90 / sourceprops_pmfast.F90 / sourceprops_pmfast_compr.F90 / sourceprops_test.F90 : rsrcpos --> Another source posiion array. Not sure yet what it does or why it is needed as well as srcpos. EDIT: this is an array of the gridded location of the sources. Appears that each source is assigned to the centre of it's host cell using NGP (grid.F90). Allocated as: allocate(rsrcpos(3,NumSrc)). Will need to be set to a local array on each node. evolve8.F90 will need to be carefully edited.
+
+evolve8.F90 / output.F90 / output_compr.F90 / photonstatistics.F90 / radiation.F90 / sourceprops_LG.F90 / sourceprops_cubep3m.F90 / sourceprops_cubep3m_compr.F90 / sourceprops_gadget.F90 / sourceprops_pmfast_compr.F90 / sourceprops_test.F90 : NormFlux --> This is the normalised ionising flux from each source. Allocated as allocate(NormFlux(NumSrc)). Will need to be set as a local array on each node. evolve8.F90 will need to be carefully edited.
+
+evolve4_periodic_compr.F90 / evolve8.F90 / sourceprops_LG.F90 / sourceprops_cubep3m.F90 / sourceprops_cubep3m_compr.F90 / sourceprops_gadget.F90 / sourceprops_pmfast_compr.F90 / sourceprops_test.F90 : SrcSeries --> I think this is an array that numbers the sources. Allocated as allocate(SrcSeries(NumSrc)). Might need to remain as a global numbering. Not sure. evolve8.F90 will need to be carefully edited.
+
+
+
+
+
