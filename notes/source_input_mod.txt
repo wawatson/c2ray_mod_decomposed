@@ -12,6 +12,9 @@ NOTES:
 
 For development purposes the code can remain almost identical, as the sources are currently split equally across the nodes (assuming the master-slave option is not employed) then here we can implement a set-up, as an intermediate step, where the sources are split based on their spatial location.
 
+The current MPI parallelism does not have specific coordinates ste up for each node as each node processes the ionisation in the entire volume from its source list. The nodes will have to be assigned appropriate coordinates. EDIT this is not true. A coordinate structure is available. This is acheivable by setting the variable "reorder = .TRUE." in MPI.F90. I need to check with Garrelt that the code runs with no bugs with this setting.
+
+
 RELEVANT VARIABLES:
 
 sourceprops_LG.F90 / sourceprops_cubep3m.F90 / sourceprops_cubep3m_compr.F90 / sourceprops_gadget.F90 / sourceprops_pmfast_compr.F90 / sourceprops_test.F90  : sourcelistfile=trim(adjustl(dir_src))//"test_sources.dat" --> this is the input file for the sources. Can stay as is.
@@ -28,6 +31,7 @@ evolve8.F90 / output.F90 / output_compr.F90 / photonstatistics.F90 / radiation.F
 
 evolve4_periodic_compr.F90 / evolve8.F90 / sourceprops_LG.F90 / sourceprops_cubep3m.F90 / sourceprops_cubep3m_compr.F90 / sourceprops_gadget.F90 / sourceprops_pmfast_compr.F90 / sourceprops_test.F90 : SrcSeries --> I think this is an array that numbers the sources. Allocated as allocate(SrcSeries(NumSrc)). Might need to remain as a global numbering. Not sure. evolve8.F90 will need to be carefully edited.
 
+cosmology.F90 / grid.F90 / output.F90 / output_compr.F90 / sourceprops_cubep3m_compr.F90 / sourceprops_gadget.F90 / sourceprops_pmfast.F90 / sourceprops_pmfast_compr.F90 / sourceprops_test.F90 : x, y, z --> grid coords. Allocated as (grid.F90):  allocate(x(mesh(1)),stat=alloc_status) etc. These arrays will need to be local to each node, with appropriate coordinate offsets.
 
 
 

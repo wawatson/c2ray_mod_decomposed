@@ -66,7 +66,7 @@ module my_mpi
   integer,public :: MPI_COMM_NEW    ! the (new) communicator
   integer,public,dimension(MPI_STATUS_SIZE) :: mympi_status ! status array
 
-  logical,parameter :: reorder=.false. !< reorder the mpi structure (for hydro)
+  logical,parameter :: reorder=.TRUE. !< reorder the mpi structure (for hydro)
   integer,dimension(NPDIM),public :: dims ! number of processors in 
                                              !  each dimension
   integer,dimension(NPDIM),public :: grid_struct ! coordinates of 
@@ -186,6 +186,10 @@ contains
     logical                  :: reorder ! reorder the MPI_COMM_WORLD
     integer          :: ierror=0
 
+!TODO UNDO
+
+    integer :: node_count
+
     ! Make a new topology
     dims(:)=0
 
@@ -213,6 +217,16 @@ contains
     ! makes grid_struct               
     call MPI_Cart_get(MPI_COMM_NEW,NPDIM,dims, & ! makes grid_struct
          periods,grid_struct,ierror)
+
+! TODO UNDO
+
+    do node_count = 0, npr-1
+
+      if(rank .eq. node_count) print*, "NODE ",rank," COORDs: ",grid_struct(:)
+      call MPI_BARRIER(MPI_COMM_NEW,ierror)
+
+    enddo
+
 #ifdef MPILOG
     if (ierror /= 0 ) write(logf,*) "error in MPI_Cart_get"
     write(logf,*) "MPI_Cart_get"

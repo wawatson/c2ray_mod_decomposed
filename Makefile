@@ -42,7 +42,7 @@ MPIFC = mpif90 # MPI compiler
 # F90 options (ifort)
 GFORTFLAGS = -O3 #-DGFORT 
 # Processor dependent optimization
-#F90FLAGS1 = $(GFORTFLAGS) 
+F90FLAGS1 = $(GFORTFLAGS) 
 
 # These flags should be added to the F90FLAGS1 depending on the executable
 # made. Specify this below on a per executable basis.

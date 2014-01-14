@@ -40,9 +40,6 @@ contains
     integer,intent(in) :: nz
     integer,intent(in) :: restart
 
-    integer :: source_count_for_node(:)
-    integer :: source_count_on_node
-
     character(len=512) :: sourcelistfile,sourcelistfilesuppress
     integer :: ns,ns0
 
@@ -75,6 +72,8 @@ contains
     ! Distribute source number to all other nodes
     call MPI_BCAST(NumSrc,1,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
 #endif
+
+
 
     ! Allocate arrays for this NumSrc
     if (NumSrc > 0) then

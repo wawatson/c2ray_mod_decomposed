@@ -1,4 +1,4 @@
-Vague roadmap for C2-Ray mod.
+i) Vague roadmap for C2-Ray mod.
 
 - Create visualisation pipeline. DONE.
 - Remove OpenMP looping. DONE. Pushed 2014/01/02
@@ -9,3 +9,7 @@ Vague roadmap for C2-Ray mod.
 - Setup relevant data structures to aggregate ionisation info on borders between MPI nodes.
 - Communicate data across boundaries and proceed with reionisation in a one-node shell around original source node.
 - Re-implement threading. Not sure how at this stage. 
+
+ii) Specific to do items:
+
+- Check with Garrelt that using reorder = .TRUE. in MPI.F90 is not buggy.
