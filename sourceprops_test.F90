@@ -14,7 +14,7 @@ module sourceprops
        S_star_nominal, StillNeutral, Number_Sourcetypes
 
   integer :: NumSrc_Glob, NumSrc_Loc
-  integer :: srcpos_x, srcpos_y, srcpos_z
+  integer :: srcpos_xyz(3)
   integer :: target_rank,rank_counter
   integer,dimension(:,:),allocatable :: srcpos
   real(kind=dp),dimension(:,:),allocatable :: rsrcpos
@@ -23,6 +23,7 @@ module sourceprops
   integer,dimension(:),allocatable :: srcSeries
   integer,dimension(:),allocatable :: srcTarget ! WW: target rank for source
   integer,dimension(:),allocatable :: target_count_by_node ! WW: array tracking how many sources each node will have
+  integer,dimension(:),allocatable :: tag_array
 
 contains
   
@@ -66,9 +67,11 @@ contains
 
 
 #ifdef MPI
-    allocate(target_count_by_node(npr))
+    allocate(target_count_by_node(0:npr-1))
+    allocate(tag_array(0:npr-1))
+    tag_array = 1
 #else
-    allocate(target_count_by_node(1))
+    allocate(target_count_by_node(0:0))
 #endif
     target_count_by_node = 0
 
@@ -94,9 +97,9 @@ contains
        
       if (rank == 0) then
 	do ns=1,NumSrc_Glob
-	  read(50,*) srcpos_x,srcpos_y,srcpos_z,NormFlux1
+	  read(50,*) srcpos_xyz,NormFlux1
 #ifdef MPI
-	  call find_target_node(srcpos_x,srcpos_y,srcpos_z)
+	  call find_target_rank(srcpos_xyz(1),srcpos_xyz(2),srcpos_xyz(3))
 #else
 	  target_rank = 0
 #endif
@@ -132,13 +135,11 @@ contains
       if(rank .eq. rank_counter) then
 	write(*,*) 'Rank = ', rank, 'Source count = ',NumSrc_Loc
       endif
-
       call MPI_BARRIER(MPI_COMM_NEW,mympierror)
-
     enddo
 
 #else
-    NumSrc_Loc = target_count_by_node(1)
+    NumSrc_Loc = target_count_by_node(0)
 #endif
 
 
@@ -146,24 +147,93 @@ contains
 
       ! now allocate source array on each rank
 
-      allocate(srcpos(3,NumSrc_Glob))
-      allocate(rsrcpos(3,NumSrc_Glob))
-      allocate(NormFlux(NumSrc_Glob))
-      allocate(SrcSeries(NumSrc_Glob))
-
-
+      allocate(srcpos(3,NumSrc_Loc))
+      allocate(rsrcpos(3,NumSrc_Loc))
+      allocate(NormFlux(NumSrc_Loc))
+      allocate(SrcSeries(NumSrc_Loc))
 
       ! Rank 0 reads in sources again to distribute them
-      if (rank == 0) then
+      if(rank == 0) then
 
 	open(unit=50,file=sourcelistfile,status="old")
 	! Number of sources
 	read(50,*) NumSrc_Glob
 
 	do ns=1,NumSrc_Glob
-	  read(50,*) srcpos(1,ns),srcpos(2,ns),srcpos(3,ns),NormFlux(ns)
-	  NormFlux(ns)=NormFlux(ns)/S_star_nominal
+	  read(50,*) srcpos_xyz,NormFlux1
+	  NormFlux1=NormFlux1/S_star_nominal
+
+#ifdef MPI
+	  call find_target_rank(srcpos_xyz(1),srcpos_xyz(2),srcpos_xyz(3))
+
+	  if(target_rank .ne. 0) then
+	    
+	    call MPI_SEND(srcpos_xyz, sizeof(srcpos_xyz), &
+		&MPI_INTEGER, target_rank,tag_array(target_rank), &
+		&MPI_COMM_NEW, mympierror)
+
+	    call MPI_SEND(NormFlux1, 1, MPI_DOUBLE_PRECISION, target_rank,&
+	        & tag_array(target_rank)+target_count_by_node(target_rank),&
+	        &MPI_COMM_NEW, mympierror)
+
+	  else ! target_rank = 0
+
+  	    srcpos(1,tag_array(target_rank)) = srcpos_xyz(1)
+	    srcpos(2,tag_array(target_rank)) = srcpos_xyz(2)
+	    srcpos(3,tag_array(target_rank)) = srcpos_xyz(3) 
+            NormFlux(tag_array(target_rank)) = NormFlux1
+
+	  endif
+
+	  tag_array(target_rank) = tag_array(target_rank) + 1
+
+
+#else
+	  target_rank = 0
+	  srcpos(1,ns) = srcpos_xyz(1)
+	  srcpos(2,ns) = srcpos_xyz(2)
+	  srcpos(3,ns) = srcpos_xyz(3)
+	  NormFlux(ns) = NormFlux1
+#endif
+
 	enddo
+
+      else ! (rank == 0) then
+#ifdef MPI
+	do ns = 1,NumSrc_Loc
+
+	  call MPI_RECV(srcpos_xyz, sizeof(srcpos_xyz), MPI_INTEGER, 0,&
+	     &ns, MPI_COMM_NEW, mympi_status, mympierror)
+
+	  call MPI_RECV(NormFlux1, 1, MPI_DOUBLE_PRECISION, 0,&
+	     &ns+NumSrc_Loc, MPI_COMM_NEW, mympi_status, mympierror)
+
+
+          srcpos(1,ns) = srcpos_xyz(1) 
+          srcpos(2,ns) = srcpos_xyz(2) 
+          srcpos(3,ns) = srcpos_xyz(3) 
+	  NormFlux(ns) = NormFlux1
+
+	enddo
+#endif
+      endif ! of rank 0
+
+      do rank_counter = 0, npr-1
+
+
+	if(rank .eq. rank_counter) then
+
+	  write(*,*) 'SOURCES ON RANK',rank
+
+	  do ns = 1,NumSrc_Loc
+	    write(*,*) srcpos(1:3,ns),NormFlux(ns)
+	  enddo
+
+	endif
+#ifdef MPI
+	call MPI_BARRIER(MPI_COMM_NEW,mympierror)
+#endif
+      enddo
 
 
 	! Source is always at cell centre!!
@@ -172,7 +242,6 @@ contains
 	  rsrcpos(2,ns)=y(srcpos(2,ns))
 	  rsrcpos(3,ns)=z(srcpos(3,ns))
 	enddo
-      endif ! of rank 0
 
 
 #ifdef MPI
@@ -222,8 +291,8 @@ contains
   !! MPI.F90.
   !!
   !! Author: William Watson
-
-  subroutine find_target_node(pos_x,pos_y,pos_z)
+#ifdef MPI
+  subroutine find_target_rank(pos_x,pos_y,pos_z)
 
       integer :: pos_x, pos_y, pos_z
       real(kind=dp) :: cell_test
@@ -244,7 +313,7 @@ contains
       
 	write(*,*) 'IRREGULAR GRID!!! EXITING!'
 
-	call MPI_ABORT(MPI_COMM_NEW,mymierror)
+	call MPI_ABORT(MPI_COMM_NEW,mympierror)
 
       else
 
@@ -261,7 +330,7 @@ contains
 	    & COMPATIBLE WITH NUMBER OF MPI NODES.'
 	write(*,*) 'GRID SIZE = ',mesh(1),"Nodes per dim = ",dims(1)
 
-	call MPI_ABORT(MPI_COMM_NEW,mymierror)
+	call MPI_ABORT(MPI_COMM_NEW,mympierror)
 
       endif
 
@@ -334,8 +403,8 @@ contains
 
 
 
-  end subroutine find_target_node
-
+  end subroutine find_target_rank
+#endif
 
 end module sourceprops
 
