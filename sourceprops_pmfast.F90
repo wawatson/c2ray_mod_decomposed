@@ -25,7 +25,7 @@ module sourceprops
 
   implicit none
 
-  integer :: NumSrc !< Number of sources
+  integer :: NumSrc_Glob !< Number of sources
   integer,dimension(:,:),allocatable :: srcpos !< mesh position of sources
   real(kind=dp),dimension(:,:),allocatable :: rsrcpos !< grid position of sources
   real(kind=dp),dimension(:,:),allocatable :: srcMass !< masses of sources
@@ -36,7 +36,7 @@ module sourceprops
   character(len=30) :: UV_Model !< type of UV model
   integer :: NumZred_uv !< Number of redshift points in UV model
 
-  integer,private :: NumSrc0=0 !< intermediate source count
+  integer,private :: NumSrc_Glob0=0 !< intermediate source count
   integer,dimension(3),private :: srcpos0 
   real(kind=dp),private :: srcMass00 !< mass of high mass sources (one source)
   real(kind=dp),private :: srcMass01 !< mass of low mass sources (one source)
@@ -99,24 +99,24 @@ contains
        if (restart == 0 .or. restart == 1) then
           open(unit=50,file=sourcelistfile,status='old')
           ! Number of sources
-          read(50,*) NumSrc0
+          read(50,*) NumSrc_Glob0
           
           ! Report
           write(logf,*) "Total number of source locations, no suppression: ", &
-               NumSrc0
+               NumSrc_Glob0
           
           ! Read in source positions and mass to establish number
           ! of non-suppressed sources
-          NumSrc = 0
+          NumSrc_Glob = 0
           NumMassiveSrc = 0
           NumSupprbleSrc = 0
           NumSupprsdSrc = 0
-          do ns0=1,NumSrc0
+          do ns0=1,NumSrc_Glob0
              read(50,*) srcpos0(1),srcpos0(2),srcpos0(3),SrcMass00,SrcMass01
              ! the cell is still neutral, no suppression
              if (SrcMass00 /= 0.0 .or. &
                   xh(srcpos0(1),srcpos0(2),srcpos0(3),1) < StillNeutral) &
-                  NumSrc=NumSrc+1
+                  NumSrc_Glob=NumSrc_Glob+1
              ! Count different types of sources
              if (SrcMass00 /= 0.0) NumMassiveSrc=NumMassiveSrc+1
              if (SrcMass01 /= 0.0) NumSupprbleSrc=NumSupprbleSrc+1
@@ -136,36 +136,36 @@ contains
           ! calculated suppressed source list
           open(unit=49,file=sourcelistfilesuppress,status='unknown')
           ! Number of sources
-          read(49,*) NumSrc
+          read(49,*) NumSrc_Glob
           close(49)
        endif
-       write(logf,*) "Number of sources, with suppression: ",NumSrc
+       write(logf,*) "Number of sources, with suppression: ",NumSrc_Glob
     endif ! end of rank 0 test
 
 #ifdef MPI
     ! Distribute source number to all other nodes
-    call MPI_BCAST(NumSrc,1,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
+    call MPI_BCAST(NumSrc_Glob,1,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
 #endif
              
 #ifdef MPILOG
-    if (rank /=0) write(logf,*) "Number of sources, with suppression: ",NumSrc
+    if (rank /=0) write(logf,*) "Number of sources, with suppression: ",NumSrc_Glob
 #endif
     
-    ! Allocate arrays for this NumSrc
-    allocate(srcpos(3,NumSrc))
-    allocate(rsrcpos(3,NumSrc))
-    allocate(SrcMass(NumSrc,0:Number_Sourcetypes))
-    allocate(NormFlux(NumSrc))
-    allocate(SrcSeries(NumSrc))
+    ! Allocate arrays for this NumSrc_Glob
+    allocate(srcpos(3,NumSrc_Glob))
+    allocate(rsrcpos(3,NumSrc_Glob))
+    allocate(SrcMass(NumSrc_Glob,0:Number_Sourcetypes))
+    allocate(NormFlux(NumSrc_Glob))
+    allocate(SrcSeries(NumSrc_Glob))
     
     if (rank == 0) then
        if (restart == 0 .or. restart == 1) then
           open(unit=50,file=sourcelistfile,status='old')
           ! Number of sources
-          read(50,*) NumSrc0
+          read(50,*) NumSrc_Glob0
           ! Read in source positions and mass
           ns=0
-          do ns0=1,NumSrc0
+          do ns0=1,NumSrc_Glob0
              read(50,*) srcpos0(1),srcpos0(2),srcpos0(3), &
                   SrcMass00,SrcMass01
              
@@ -217,8 +217,8 @@ contains
 
           ! Save new source list, without the suppressed ones
           open(unit=49,file=sourcelistfilesuppress,status='unknown')
-          write(49,*) NumSrc
-          do ns0=1,NumSrc
+          write(49,*) NumSrc_Glob
+          do ns0=1,NumSrc_Glob
              write(49,*) srcpos(1,ns0),srcpos(2,ns0),srcpos(3,ns0), &
                   SrcMass(ns0,0)
           enddo
@@ -226,10 +226,10 @@ contains
        else ! of restart test
           ! Read source list from file saved previously
           open(unit=49,file=sourcelistfilesuppress,status="old")
-          write(logf,*) "Reading ",NumSrc," sources from ", &
+          write(logf,*) "Reading ",NumSrc_Glob," sources from ", &
                trim(adjustl(sourcelistfilesuppress))
-          read(49,*) NumSrc
-          do ns0=1,NumSrc
+          read(49,*) NumSrc_Glob
+          do ns0=1,NumSrc_Glob
              read(49,*) srcpos(1,ns0),srcpos(2,ns0),srcpos(3,ns0), &
                   SrcMass(ns0,0)
              ! Source is always at cell centre!!
@@ -244,15 +244,15 @@ contains
     
 #ifdef MPI
     ! Distribute the source parameters to the other nodes
-    call MPI_BCAST(srcpos,3*NumSrc,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
-    call MPI_BCAST(rsrcpos,3*NumSrc,MPI_DOUBLE_PRECISION,0,MPI_COMM_NEW,mympierror)
-    call MPI_BCAST(SrcMass,(1+Number_Sourcetypes)*NumSrc,MPI_DOUBLE_PRECISION,0,MPI_COMM_NEW,mympierror)
+    call MPI_BCAST(srcpos,3*NumSrc_Glob,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
+    call MPI_BCAST(rsrcpos,3*NumSrc_Glob,MPI_DOUBLE_PRECISION,0,MPI_COMM_NEW,mympierror)
+    call MPI_BCAST(SrcMass,(1+Number_Sourcetypes)*NumSrc_Glob,MPI_DOUBLE_PRECISION,0,MPI_COMM_NEW,mympierror)
 #endif
     
     ! Turn masses into luminosities
     select case (UV_Model)
     case ("Iliev et al")
-       do ns=1,NumSrc
+       do ns=1,NumSrc_Glob
           !note that now photons/atom are included in SrcMass
           NormFlux(ns)=SrcMass(ns,0)*M_grid*  &
                Omega_B/(Omega0*m_p)/S_star_nominal
@@ -263,7 +263,7 @@ contains
        if (nz <= NumZred_uv) then
           total_SrcMass=sum(SrcMass(:,0))
           ! Only set NormFlux when data is available!
-          do ns=1,NumSrc
+          do ns=1,NumSrc_Glob
              SrcMass(ns,0)=sum(SrcMass(ns,1:Number_Sourcetypes))
              NormFlux(ns)=uv_array(nz)/lifetime2*SrcMass(ns,0)/total_SrcMass/S_star_nominal
           enddo
@@ -276,7 +276,7 @@ contains
        if (nz <= NumZred_uv) then
           total_SrcMass=sum(SrcMass(:,0))
           ! Only set NormFlux when data is available!
-          do ns=1,NumSrc
+          do ns=1,NumSrc_Glob
              SrcMass(ns,0)=sum(SrcMass(ns,1:Number_Sourcetypes))
              NormFlux(ns)=uv_array(nz)*SrcMass(ns,0)/total_SrcMass/S_star_nominal
           enddo
@@ -291,17 +291,17 @@ contains
        !write(logf,*) 'Source lifetime=', lifetime/(1e6*YEAR),' Myr'
        write(logf,*) 'Total flux= ',sum(NormFlux)*S_star_nominal,' s^-1'
        ! Create array of source numbers for generating random order
-       do ns=1,NumSrc
+       do ns=1,NumSrc_Glob
           SrcSeries(ns)=ns
        enddo
        
        ! Make a random order
-       call ctrper(SrcSeries(1:NumSrc),1.0)
+       call ctrper(SrcSeries(1:NumSrc_Glob),1.0)
     endif
 
 #ifdef MPI
     ! Distribute the source series to the other nodes
-    call MPI_BCAST(SrcSeries,NumSrc,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
+    call MPI_BCAST(SrcSeries,NumSrc_Glob,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
 #endif
 
   end subroutine source_properties

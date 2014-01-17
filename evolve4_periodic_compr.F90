@@ -32,7 +32,7 @@ module evolve
   use sizes, only: Ndim, mesh
   use grid, only: x,y,z,vol,dr
   use material, only: ndens, xh_compr, temper, ionized_from_compr, neutral_from_compr, ionized_to_compr, neutral_to_compr
-  use sourceprops, only: SrcSeries, NumSrc, srcpos
+  use sourceprops, only: SrcSeries, NumSrc_Glob, srcpos
   use photonstatistics, only: state_before, calculate_photon_statistics, &
        photon_loss
   use c2ray_parameters, only: convergence_fraction

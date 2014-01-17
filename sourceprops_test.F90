@@ -13,14 +13,16 @@ module sourceprops
   use c2ray_parameters, only: phot_per_atom, lifetime, &
        S_star_nominal, StillNeutral, Number_Sourcetypes
 
-  integer :: NumSrc
+  integer :: NumSrc_Glob, NumSrc_Loc
   integer :: srcpos_x, srcpos_y, srcpos_z
-  integer :: target_rank 
+  integer :: target_rank,rank_counter
   integer,dimension(:,:),allocatable :: srcpos
   real(kind=dp),dimension(:,:),allocatable :: rsrcpos
   real(kind=dp),dimension(:),allocatable :: NormFlux
+  real(kind=dp) :: NormFlux1
   integer,dimension(:),allocatable :: srcSeries
   integer,dimension(:),allocatable :: srcTarget ! WW: target rank for source
+  integer,dimension(:),allocatable :: target_count_by_node ! WW: array tracking how many sources each node will have
 
 contains
   
@@ -54,7 +56,7 @@ contains
 #ifdef MPILOG     
     write(logf,*) "Check sourceprops: ",zred_now,nz,lifetime2,restart
 #endif 
-    
+   
     ! Deallocate source arrays
     if (allocated(srcpos)) deallocate(srcpos)
     if (allocated(rsrcpos)) deallocate(rsrcpos)
@@ -63,6 +65,13 @@ contains
     if (allocated(srcTarget)) deallocate(srcTarget)
 
 
+#ifdef MPI
+    allocate(target_count_by_node(npr))
+#else
+    allocate(target_count_by_node(1))
+#endif
+    target_count_by_node = 0
+
     ! Rank 0 reads in sources
     if (rank == 0) then
        ! Construct the file names
@@ -70,94 +79,130 @@ contains
 
        open(unit=50,file=sourcelistfile,status="old")
        ! Number of sources
-       read(50,*) NumSrc
+       read(50,*) NumSrc_Glob
 
     endif ! end of rank 0 test
     
 #ifdef MPI
     ! Distribute source number to all other nodes
-    call MPI_BCAST(NumSrc,1,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
+    call MPI_BCAST(NumSrc_Glob,1,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
 #endif
 
-    ! Allocate arrays for this NumSrc
-    if (NumSrc > 0) then
-       allocate(srcpos(3,NumSrc))
-       allocate(rsrcpos(3,NumSrc))
-       allocate(NormFlux(NumSrc))
-       allocate(SrcSeries(NumSrc))
-       allocate(srcTarget(NumSrc))
+    if (NumSrc_Glob > 0) then
+
+      allocate(srcTarget(NumSrc_Glob))
        
-       ! Fill in the source arrays
-       if (rank == 0) then
-          do ns=1,NumSrc
-             read(50,*) srcpos(1,ns),srcpos(2,ns),srcpos(3,ns),NormFlux(ns)
-             NormFlux(ns)=NormFlux(ns)/S_star_nominal
+      if (rank == 0) then
+	do ns=1,NumSrc_Glob
+	  read(50,*) srcpos_x,srcpos_y,srcpos_z,NormFlux1
 #ifdef MPI
-	     call find_target_node(srcpos(1,ns),srcpos(2,ns),srcpos(3,ns))
+	  call find_target_node(srcpos_x,srcpos_y,srcpos_z)
 #else
-	     target_rank = 0
+	  target_rank = 0
 #endif
-	     srcTarget(ns) = target_rank
+	  srcTarget(ns) = target_rank
 
-          enddo
-          close(50)
-          
-          ! STANDARD TEST
-          ! Source positions in file start at 1!
-          !           srcpos(1:3,1)=(/ 50, 50, 50 /)
-          !           srcpos(1:3,2)=(/ 51, 50, 50 /)
-          !           srcpos(1:3,3)=(/ 52, 50, 50 /)
-          !           srcpos(1:3,4)=(/ 53, 50, 50 /)
-          !           NormFlux(1:4)=1e55_dp/S_star_nominal
-          
-          !           srcpos(1:3,5)=(/ 20, 10, 10 /)
-          !           NormFlux(5)=1e57_dp/S_star_nominal
-          
-          
-          !           srcpos(1:3,6)=(/ 70, 70, 50 /)
-          !           srcpos(1:3,7)=(/ 72, 70, 50 /)
-          !           srcpos(1:3,8)=(/ 70, 72, 50 /)
-          !           srcpos(1:3,9)=(/ 72, 72, 50 /)
-          !           NormFlux(6:8)=1e55_dp/S_star_nominal
-          !           NormFlux(9)=1e56_dp/S_star_nominal
-          
-          !           srcpos(1:3,10)=(/ 20, 10, 90 /)
-          !           NormFlux(10)=1e54_dp/S_star_nominal
-          
-          ! Source is always at cell centre!!
-          do ns=1,NumSrc
-             rsrcpos(1,ns)=x(srcpos(1,ns))
-             rsrcpos(2,ns)=y(srcpos(2,ns))
-             rsrcpos(3,ns)=z(srcpos(3,ns))
-          enddo
-       endif ! of rank 0 test
-       
-       
-#ifdef MPI
-       ! Distribute the source parameters to the other nodes
-       call MPI_BCAST(srcpos,3*NumSrc,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
-       call MPI_BCAST(rsrcpos,3*NumSrc,MPI_DOUBLE_PRECISION,0,MPI_COMM_NEW,mympierror)
-       call MPI_BCAST(NormFlux,NumSrc,MPI_DOUBLE_PRECISION,0,MPI_COMM_NEW,mympierror)
-       call MPI_BCAST(srcTarget,NumSrc,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)       
-#endif
+	  target_count_by_node(target_rank) = &
+	      &target_count_by_node(target_rank) + 1
+	enddo
 
-       if (rank == 0) then
-          write(logf,*) 'Total flux= ',sum(NormFlux)*S_star_nominal,' s^-1'
+	close(50)
 
-          ! Create array of source numbers for generating random order
-          do ns=1,NumSrc
-             SrcSeries(ns)=ns
-          enddo
-          ! Make a random order
-          call ctrper(SrcSeries(1:NumSrc),1.0)
-       endif
-       
-#ifdef MPI
-       ! Distribute the source series to the other nodes
-       call MPI_BCAST(SrcSeries,NumSrc,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
-#endif
-     
+      endif
+    else ! if (NumSrc_Glob > 0) 
+      NumSrc_Glob = 0
+      NumSrc_Loc = 0
     endif
+
+    ! Broadcast source info
+#ifdef MPI
+
+
+    call MPI_BCAST(target_count_by_node,npr,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
+
+    NumSrc_Loc = target_count_by_node(rank)
+
+    do rank_counter = 0, npr
+
+      if(rank .eq. 0 .and. rank_counter .eq. 0) then
+	write(*,*) 'Source counts distributed across tasks...'
+	write(*,*) 'Total sources = ',NumSrc_Glob
+      endif
+
+      if(rank .eq. rank_counter) then
+	write(*,*) 'Rank = ', rank, 'Source count = ',NumSrc_Loc
+      endif
+
+      call MPI_BARRIER(MPI_COMM_NEW,mympierror)
+
+    enddo
+
+#else
+    NumSrc_Loc = target_count_by_node(1)
+#endif
+
+
+    if (NumSrc_Glob > 0) then
+
+      ! now allocate source array on each rank
+
+      allocate(srcpos(3,NumSrc_Glob))
+      allocate(rsrcpos(3,NumSrc_Glob))
+      allocate(NormFlux(NumSrc_Glob))
+      allocate(SrcSeries(NumSrc_Glob))
+
+
+
+      ! Rank 0 reads in sources again to distribute them
+      if (rank == 0) then
+
+	open(unit=50,file=sourcelistfile,status="old")
+	! Number of sources
+	read(50,*) NumSrc_Glob
+
+	do ns=1,NumSrc_Glob
+	  read(50,*) srcpos(1,ns),srcpos(2,ns),srcpos(3,ns),NormFlux(ns)
+	  NormFlux(ns)=NormFlux(ns)/S_star_nominal
+	enddo
+
+
+	! Source is always at cell centre!!
+	do ns=1,NumSrc_Glob
+	  rsrcpos(1,ns)=x(srcpos(1,ns))
+	  rsrcpos(2,ns)=y(srcpos(2,ns))
+	  rsrcpos(3,ns)=z(srcpos(3,ns))
+	enddo
+      endif ! of rank 0
+
+
+#ifdef MPI
+      ! Distribute the source parameters to the other nodes
+      call MPI_BCAST(srcpos,3*NumSrc_Glob,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
+      call MPI_BCAST(rsrcpos,3*NumSrc_Glob,MPI_DOUBLE_PRECISION,0,MPI_COMM_NEW,mympierror)
+      call MPI_BCAST(NormFlux,NumSrc_Glob,MPI_DOUBLE_PRECISION,0,MPI_COMM_NEW,mympierror)
+      call MPI_BCAST(srcTarget,NumSrc_Glob,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)       
+#endif
+
+      if (rank == 0) then
+	write(logf,*) 'Total flux= ',sum(NormFlux)*S_star_nominal,' s^-1'
+
+	! Create array of source numbers for generating random order
+	do ns=1,NumSrc_Glob
+	  SrcSeries(ns)=ns
+	enddo
+	! Make a random order
+	call ctrper(SrcSeries(1:NumSrc_Glob),1.0)
+      endif
+
+#ifdef MPI
+      ! Distribute the source series to the other nodes
+      call MPI_BCAST(SrcSeries,NumSrc_Glob,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
+#endif
+
+    endif
+
+
+    
     
   end subroutine source_properties
      

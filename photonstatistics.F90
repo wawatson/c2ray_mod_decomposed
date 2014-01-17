@@ -23,7 +23,7 @@ module photonstatistics
   use grid, only: vol
   use material, only: ndens, temper, clumping, clumping_point
   use tped, only: electrondens
-  use sourceprops, only: NormFlux, NumSrc
+  use sourceprops, only: NormFlux, NumSrc_Glob
   use radiation, only: S_star, NumFreqBnd
   use c2ray_parameters, only: type_of_clumping
 
@@ -250,7 +250,7 @@ contains
     total_photon_loss=sum(photon_loss)*dt* &
          real(mesh(1))*real(mesh(2))*real(mesh(3))
     total_LLS_loss = LLS_loss*dt
-    totalsrc=sum(NormFlux(1:NumSrc))*s_star*dt
+    totalsrc=sum(NormFlux(1:NumSrc_Glob))*s_star*dt
     !photcons=(total_ion-totcollisions)/totalsrc
     photcons=(total_ion+LLS_loss-totcollisions)/totalsrc
     if (rank == 0) then
@@ -274,7 +274,7 @@ contains
 
     real(kind=dp),intent(in) :: dt !< time step
 
-    grtotal_src=grtotal_src+sum(NormFlux(1:NumSrc))*s_star*dt
+    grtotal_src=grtotal_src+sum(NormFlux(1:NumSrc_Glob))*s_star*dt
     grtotal_ion=grtotal_ion+total_ion-totcollisions
 
   end subroutine update_grandtotal_photonstatistics

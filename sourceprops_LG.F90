@@ -45,8 +45,8 @@ module sourceprops
   !> maximum increase in uv to use up cumulated photons
   real(kind=dp),parameter,private :: cumfrac_max=0.15 
 
-  integer :: NumSrc=0 !< Number of sources
-  integer :: Prev_NumSrc !< Previous number of sources
+  integer :: NumSrc_Glob=0 !< Number of sources
+  integer :: Prev_NumSrc_Glob !< Previous number of sources
   integer,dimension(:,:),allocatable :: srcpos !< mesh position of sources
   real(kind=dp),dimension(:),allocatable :: NormFlux !< normalized ionizing flux of sources
   real(kind=dp),dimension(:),allocatable :: uv_array  !< list of UV flux evolution (for some sources models)
@@ -56,7 +56,7 @@ module sourceprops
 
   character(len=30) :: UV_Model !< type of UV model
   integer :: NumZred_uv !< Number of redshift points in UV model
-  integer,private :: NumSrc0=0 !< intermediate source count
+  integer,private :: NumSrc_Glob0=0 !< intermediate source count
   integer,dimension(3),private :: srcpos0
   real(kind=dp),private :: srcMass00,srcMass01,total_SrcMass
   character(len=6),private :: z_str !< string value of redshift
@@ -101,7 +101,7 @@ contains
     !if (allocated(srcMass)) deallocate(srcMass)
     if (allocated(NormFlux)) deallocate(NormFlux)
     
-    Prev_NumSrc=NumSrc
+    Prev_NumSrc_Glob=NumSrc_Glob
 
     ! Rank 0 reads in sources
     if (rank == 0) then
@@ -125,19 +125,19 @@ contains
 
 #ifdef MPI
     ! Distribute source number to all other nodes
-    call MPI_BCAST(NumSrc,1,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
+    call MPI_BCAST(NumSrc_Glob,1,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
 #endif
              
 #ifdef MPILOG
-    if (rank /=0) write(logf,*) "Number of sources, with suppression: ",NumSrc
+    if (rank /=0) write(logf,*) "Number of sources, with suppression: ",NumSrc_Glob
 #endif
     
-    ! Allocate arrays for this NumSrc
-    if (NumSrc > 0) then
-       allocate(srcpos(3,NumSrc))
-       !allocate(SrcMass(NumSrc,0:Number_Sourcetypes))
-       allocate(NormFlux(0:NumSrc)) ! 0 will hold lost photons
-       !allocate(SrcSeries(NumSrc))
+    ! Allocate arrays for this NumSrc_Glob
+    if (NumSrc_Glob > 0) then
+       allocate(srcpos(3,NumSrc_Glob))
+       !allocate(SrcMass(NumSrc_Glob,0:Number_Sourcetypes))
+       allocate(NormFlux(0:NumSrc_Glob)) ! 0 will hold lost photons
+       !allocate(SrcSeries(NumSrc_Glob))
 
        ! Fill in the source arrays
        if (rank == 0) then
@@ -147,30 +147,30 @@ contains
           ! first redshift for which sources are active (this way cumulative_uv
           ! can be used in all cases).
           ! New version: cumulative_uv is slowly reduced
-          !if (Prev_NumSrc /= 0) cumulative_uv=0.0
+          !if (Prev_NumSrc_Glob /= 0) cumulative_uv=0.0
           call assign_uv_luminosities (lifetime2,nz)
 
           write(logf,*) 'Source lifetime=', lifetime2/(1e6*YEAR),' Myr'
-          write(logf,*) 'Total flux= ',sum(NormFlux(1:NumSrc))*S_star_nominal,' s^-1'
+          write(logf,*) 'Total flux= ',sum(NormFlux(1:NumSrc_Glob))*S_star_nominal,' s^-1'
           ! Create array of source numbers for generating random order
-          !do ns=1,NumSrc
+          !do ns=1,NumSrc_Glob
           !   SrcSeries(ns)=ns
           !enddo
           
           ! Make a random order
-          !call ctrper(SrcSeries(1:NumSrc),1.0)
+          !call ctrper(SrcSeries(1:NumSrc_Glob),1.0)
        endif
 
 #ifdef MPI
        ! Distribute the source parameters to the other nodes
-       call MPI_BCAST(srcpos,3*NumSrc,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
-       !call MPI_BCAST(SrcMass,(1+Number_Sourcetypes)*NumSrc,MPI_DOUBLE_PRECISION,0,MPI_COMM_NEW,mympierror)
-       call MPI_BCAST(NormFlux,NumSrc+1,MPI_DOUBLE_PRECISION,0,MPI_COMM_NEW,mympierror)
+       call MPI_BCAST(srcpos,3*NumSrc_Glob,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
+       !call MPI_BCAST(SrcMass,(1+Number_Sourcetypes)*NumSrc_Glob,MPI_DOUBLE_PRECISION,0,MPI_COMM_NEW,mympierror)
+       call MPI_BCAST(NormFlux,NumSrc_Glob+1,MPI_DOUBLE_PRECISION,0,MPI_COMM_NEW,mympierror)
 #endif
     
 #ifdef MPI
        ! Distribute the source series to the other nodes
-       !call MPI_BCAST(SrcSeries,NumSrc,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
+       !call MPI_BCAST(SrcSeries,NumSrc_Glob,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
 #endif
       
     else
@@ -198,19 +198,19 @@ contains
     if (restart == 0 .or. restart == 1) then
        open(unit=50,file=sourcelistfile,status='old')
        ! Number of sources
-       read(50,*) NumSrc0
+       read(50,*) NumSrc_Glob0
        
        ! Report
        write(logf,*) "Total number of source locations, no suppression: ", &
-            NumSrc0
+            NumSrc_Glob0
        
        ! Read in source positions and mass to count the number
        ! of non-suppressed sources
-       NumSrc = 0
+       NumSrc_Glob = 0
        NumMassiveSrc = 0
        NumSupprbleSrc = 0
        NumSupprsdSrc = 0
-       do ns0=1,NumSrc0
+       do ns0=1,NumSrc_Glob0
           ! If you change the following lines, also change it below in
           ! read_in_sources
           read(50,*) srclist(1:ncolumns_srcfile)
@@ -221,7 +221,7 @@ contains
 
           ! Massive sources are never suppressed.
           if (SrcMass00 /= 0.0) then
-             NumSrc=NumSrc+1
+             NumSrc_Glob=NumSrc_Glob+1
           ! if the cell is still neutral, no suppression (if we use the Iliev
           ! et al source model)   
 #ifdef ALLFRAC
@@ -230,7 +230,7 @@ contains
           elseif (xh(srcpos0(1),srcpos0(2),srcpos0(3)) < StillNeutral .and. &
 #endif
                UV_Model == "Iliev et al") then
-             NumSrc=NumSrc+1
+             NumSrc_Glob=NumSrc_Glob+1
           endif
 
           ! Count different types of sources
@@ -257,10 +257,10 @@ contains
        ! calculated suppressed source list
        open(unit=49,file=sourcelistfilesuppress,status='unknown')
        ! Number of sources
-       read(49,*) NumSrc
+       read(49,*) NumSrc_Glob
        close(49)
     endif
-    write(logf,*) "Number of sources, with suppression: ",NumSrc
+    write(logf,*) "Number of sources, with suppression: ",NumSrc_Glob
 
   end subroutine establish_number_of_active_sources
 
@@ -276,10 +276,10 @@ contains
     if (restart == 0 .or. restart == 1) then
        open(unit=50,file=sourcelistfile,status='old')
        ! Number of sources
-       read(50,*) NumSrc0
+       read(50,*) NumSrc_Glob0
        ! Read in source positions and mass
        ns=0
-       do ns0=1,NumSrc0
+       do ns0=1,NumSrc_Glob0
           ! If you change the following lines, also change it above in
           ! establish_number_of_active_sources
           read(50,*) srclist(1:ncolumns_srcfile)
@@ -330,8 +330,8 @@ contains
        
        ! Save new source list, without the suppressed ones
        open(unit=49,file=sourcelistfilesuppress,status='unknown')
-       write(49,*) NumSrc
-       do ns0=1,NumSrc
+       write(49,*) NumSrc_Glob
+       do ns0=1,NumSrc_Glob
           write(49,*) srcpos(1,ns0),srcpos(2,ns0),srcpos(3,ns0), &
                NormFlux(ns0)
        enddo
@@ -339,10 +339,10 @@ contains
     else ! of restart test
        ! Read source list from file saved previously
        open(unit=49,file=sourcelistfilesuppress,status="old")
-       write(logf,*) "Reading ",NumSrc," sources from ", &
+       write(logf,*) "Reading ",NumSrc_Glob," sources from ", &
             trim(adjustl(sourcelistfilesuppress))
-       read(49,*) NumSrc
-       do ns0=1,NumSrc
+       read(49,*) NumSrc_Glob
+       do ns0=1,NumSrc_Glob
           read(49,*) srcpos(1,ns0),srcpos(2,ns0),srcpos(3,ns0), &
                 NormFlux(ns0)
        enddo
@@ -363,7 +363,7 @@ contains
     ! Turn masses into luminosities
     select case (UV_Model)
     case ("Iliev et al")
-       do ns=1,NumSrc
+       do ns=1,NumSrc_Glob
           !note that now photons/atom are already included in NormFlux
           NormFlux(ns)=NormFlux(ns)*M_SOLAR*  &
                Omega_B/(Omega0*m_p)/S_star_nominal
@@ -378,9 +378,9 @@ contains
                   cumulative_uv,uv_array(nz),cumulative_uv/uv_array(nz)
              write(logf,*) 'Cumulative fraction used: ', cumfrac
           endif
-          total_SrcMass=sum(NormFlux(1:NumSrc))
+          total_SrcMass=sum(NormFlux(1:NumSrc_Glob))
           ! Only set NormFlux when data is available!
-          do ns=1,NumSrc
+          do ns=1,NumSrc_Glob
              NormFlux(ns)=(1.0+cumfrac)*uv_array(nz)/lifetime2*NormFlux(ns)/total_SrcMass/S_star_nominal
              !NormFlux(ns)=(cumulative_uv+uv_array(nz))/lifetime2*SrcMass(ns,0)/total_SrcMass/S_star_nominal
           enddo
@@ -393,9 +393,9 @@ contains
        endif
     case ("Fixed Ndot_gamma")
        if (nz <= NumZred_uv) then
-          total_SrcMass=sum(NormFlux(1:NumSrc))
+          total_SrcMass=sum(NormFlux(1:NumSrc_Glob))
           ! Only set NormFlux when data is available!
-          do ns=1,NumSrc
+          do ns=1,NumSrc_Glob
              NormFlux(ns)=uv_array(nz)*NormFlux(ns)/total_SrcMass/S_star_nominal
           enddo
        else

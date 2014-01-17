@@ -53,7 +53,7 @@ Program C2Ray
   use material, only: mat_ini, xfrac_ini, temper_ini, dens_ini, set_clumping, &
        set_LLS
   use times, only: time_ini, set_timesteps
-  use sourceprops, only: source_properties_ini, source_properties, NumSrc
+  use sourceprops, only: source_properties_ini, source_properties, NumSrc_Glob
   use evolve, only: evolve_ini,evolve3D
   use c2ray_parameters, only: isothermal ! NB: in some versions set in material
 
@@ -291,7 +291,7 @@ Program C2Ray
      write(logf,*) 'First output'
 #endif 
      ! If start of simulation output
-     if (NumSrc > 0 .and. sim_time == 0.0) call output(time2zred(sim_time),sim_time,dt, &
+     if (NumSrc_Glob > 0 .and. sim_time == 0.0) call output(time2zred(sim_time),sim_time,dt, &
           photcons_flag)
 
 #ifdef MPILOG     
@@ -323,7 +323,7 @@ Program C2Ray
         if (use_LLS .and. type_of_LLS /= 2) call set_LLS(zred)
 
         ! Take one time step
-        if (NumSrc > 0) call evolve3D(sim_time,actual_dt,iter_restart)
+        if (NumSrc_Glob > 0) call evolve3D(sim_time,actual_dt,iter_restart)
 
         ! Reset flag for restart from iteration 
         ! (evolve3D is the last routine affected by this)
@@ -334,7 +334,7 @@ Program C2Ray
             
         ! Write output
         if (abs(sim_time-next_output_time) <= 1e-6*sim_time) then
-           if (NumSrc > 0) call output(time2zred(sim_time),sim_time,actual_dt, &
+           if (NumSrc_Glob > 0) call output(time2zred(sim_time),sim_time,actual_dt, &
                 photcons_flag)
            next_output_time=next_output_time+output_time
            if (photcons_flag /= 0 .and. stop_on_photon_violation) then

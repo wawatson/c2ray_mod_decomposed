@@ -36,7 +36,7 @@ module evolve
   use material, only: temper
   use material, only: get_temperature_point, set_temperature_point
   !use material, only: set_final_temperature_point, isothermal
-  use sourceprops, only: NumSrc, srcpos, NormFlux,srcTarget !SrcSeries
+  use sourceprops, only: NumSrc_Glob, srcpos, NormFlux,srcTarget !SrcSeries
   use radiation, only: NumFreqBnd
   use cosmology, only: time2zred
   use photonstatistics, only: state_before, calculate_photon_statistics, &
@@ -211,7 +211,7 @@ contains
     ! Set the conv_criterion, if there are few sources we should make
     ! sure that things are converged around these sources.
     conv_criterion=min(int(convergence_fraction*mesh(1)*mesh(2)*mesh(3)), &
-         (NumSrc-1)/3)
+         (NumSrc_Glob-1)/3)
 
     ! Report time
     if (rank == 0) write(timefile,"(A,F8.1)") &
@@ -272,7 +272,7 @@ contains
        ! Report subbox statistics
        if (rank == 0) &
             write(logf,*) "Average number of subboxes: ", &
-	    real(sum_nbox_all)/real(NumSrc)
+	    real(sum_nbox_all)/real(NumSrc_Glob)
 
        if (rank == 0) then
           call system_clock(wallclock2,countspersec)
@@ -477,12 +477,12 @@ contains
 
     ! Make a randomized list of sources :: call in serial
     ! disabled / GM110512
-    !if ( rank == 0 ) call ctrper (SrcSeries(1:NumSrc),1.0)
+    !if ( rank == 0 ) call ctrper (SrcSeries(1:NumSrc_Glob),1.0)
 
 #ifdef MPI
     ! Distribute the source list to the other nodes
     ! disabled / GM110512
-    !call MPI_BCAST(SrcSeries,NumSrc,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
+    !call MPI_BCAST(SrcSeries,NumSrc_Glob,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
 #endif
     
     ! Ray trace the whole grid for all sources.
@@ -689,16 +689,16 @@ contains
 
     ! send tasks to slaves 
     
-    whomax = min(NumSrc,npr-1)
+    whomax = min(NumSrc_Glob,npr-1)
     do who=1,whomax
-       if (ns1 <= NumSrc) then
+       if (ns1 <= NumSrc_Glob) then
           ns1=ns1+1
           call MPI_Send (ns1, 1, MPI_INTEGER, who, 1,  &
                MPI_COMM_NEW, mympierror)
        endif
     enddo
     
-    do while (sources_done < NumSrc)
+    do while (sources_done < NumSrc_Glob)
        
        ! wait for an answer from a slave. 
        
@@ -717,7 +717,7 @@ contains
        ! put the slave on work again,
        ! but only if not all tasks have been sent.
        ! we use the value of num to detect this */
-       if (ns1 < NumSrc) then
+       if (ns1 < NumSrc_Glob) then
           ns1=ns1+1
           call MPI_Send (ns1, 1, MPI_INTEGER, &
                who,		&	
@@ -752,7 +752,7 @@ contains
     enddo
     
     write(logf,*) 'Mean number of sources per processor: ', &
-         real(NumSrc)/real(npr-1)
+         real(NumSrc_Glob)/real(npr-1)
     write(logf,*) 'Counted mean number of sources per processor: ', &
          real(sum(counts(1:npr-1)))/real(npr-1)
     write(logf,*) 'Minimum and maximum number of sources ', &
@@ -891,7 +891,7 @@ contains
     integer :: ns1
 
     ! Source Loop - distributed for the MPI nodes
-    do ns1=1,NumSrc
+    do ns1=1,NumSrc_Glob
 
       if(srcTarget(ns1) .eq. rank) then
 #ifdef MPILOG

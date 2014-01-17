@@ -126,7 +126,7 @@ contains
     use grid, only: x, vol
     use material, only: xh_compr, temper, ndens, neutral_from_compr, ionized_from_compr
     use evolve, only: phih_grid
-    use sourceprops, only: srcpos, NormFlux, NumSrc
+    use sourceprops, only: srcpos, NormFlux, NumSrc_Glob
     use photonstatistics, only: do_photonstatistics, total_ion, totrec, totcollisions, dh0, grtotal_ion, photon_loss
     use radiation, only: teff,rstar,lstar,S_star
 
@@ -262,7 +262,7 @@ contains
           ! multiply by this again.
           photon_loss=photon_loss*real(mesh(1))*real(mesh(2))*real(mesh(3))
           total_ion=total_ion + photon_loss
-          totalsrc=sum(NormFlux(1:NumSrc))*s_star*dt
+          totalsrc=sum(NormFlux(1:NumSrc_Glob))*s_star*dt
           grtotal_ion=grtotal_ion+total_ion-totcollisions
           grtotalsrc=grtotalsrc+totalsrc
           photcons=(total_ion-totcollisions)/totalsrc

@@ -27,14 +27,14 @@ module sourceprops
   !> base name of source list files
   character(len=100),private :: sourcelistfile_base="_gadget_sources.dat"
 
-  integer :: NumSrc=0 !< Number of sources
+  integer :: NumSrc_Glob=0 !< Number of sources
   integer,dimension(:,:),allocatable :: srcpos !< mesh position of sources
   real(kind=dp),dimension(:,:),allocatable :: rsrcpos !< grid position of sources
   real(kind=dp),dimension(:,:),allocatable :: srcMass !< masses of sources 
   real(kind=dp),dimension(:),allocatable :: NormFlux !< normalized ionizing flux of sources
   integer,dimension(:),allocatable :: srcSeries  !< a randomized list of sources
 
-  integer,private :: NumSrc0=0 !< intermediate source count
+  integer,private :: NumSrc_Glob0=0 !< intermediate source count
   integer,dimension(3),private :: srcpos0
   real(kind=dp),private :: srcMass00,srcMass01
   character(len=6),private :: z_str !< string value of redshift
@@ -66,7 +66,7 @@ contains
 #endif
 
     ! Deallocate source arrays
-    if (NumSrc0 /= 0) then
+    if (NumSrc_Glob0 /= 0) then
        deallocate(srcpos)
        deallocate(rsrcpos)
        deallocate(srcMass)
@@ -90,19 +90,19 @@ contains
     endif ! end of rank 0 test
 #ifdef MPI
     ! Distribute source number to all other nodes
-    call MPI_BCAST(NumSrc,1,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
+    call MPI_BCAST(NumSrc_Glob,1,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
 #endif
 
 #ifdef MPILOG
-    if (rank /=0) write(logf,*) "Number of sources, with suppression: ",NumSrc
+    if (rank /=0) write(logf,*) "Number of sources, with suppression: ",NumSrc_Glob
 #endif
 
-    ! Allocate arrays for this NumSrc
-    if (NumSrc > 0) then
-       allocate(srcpos(3,NumSrc))
-       allocate(rsrcpos(3,NumSrc))
-       allocate(NormFlux(0:NumSrc)) ! 0 will hold lost photons
-       allocate(SrcSeries(NumSrc))
+    ! Allocate arrays for this NumSrc_Glob
+    if (NumSrc_Glob > 0) then
+       allocate(srcpos(3,NumSrc_Glob))
+       allocate(rsrcpos(3,NumSrc_Glob))
+       allocate(NormFlux(0:NumSrc_Glob)) ! 0 will hold lost photons
+       allocate(SrcSeries(NumSrc_Glob))
        
        ! Fill in the source arrays
        if (rank == 0) then
@@ -110,23 +110,23 @@ contains
 
           call assign_uv_luminosities (lifetime2,nz)
 
-          write(logf,*) 'Total flux= ',sum(NormFlux(1:NumSrc))*S_star_nominal,' s^-1'
+          write(logf,*) 'Total flux= ',sum(NormFlux(1:NumSrc_Glob))*S_star_nominal,' s^-1'
           ! Create array of source numbers for generating random order
-          do ns=1,NumSrc
+          do ns=1,NumSrc_Glob
              SrcSeries(ns)=ns
           enddo
           
           ! Make a random order
-          call ctrper(SrcSeries(1:NumSrc),1.0)
+          call ctrper(SrcSeries(1:NumSrc_Glob),1.0)
        endif
 
 #ifdef MPI
        ! Distribute the source parameters to the other nodes
-       call MPI_BCAST(srcpos,3*NumSrc,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
-       call MPI_BCAST(rsrcpos,3*NumSrc,MPI_DOUBLE_PRECISION,0,MPI_COMM_NEW,mympierror)
-       call MPI_BCAST(NormFlux,NumSrc+1,MPI_DOUBLE_PRECISION,0,MPI_COMM_NEW,mympierror)
+       call MPI_BCAST(srcpos,3*NumSrc_Glob,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
+       call MPI_BCAST(rsrcpos,3*NumSrc_Glob,MPI_DOUBLE_PRECISION,0,MPI_COMM_NEW,mympierror)
+       call MPI_BCAST(NormFlux,NumSrc_Glob+1,MPI_DOUBLE_PRECISION,0,MPI_COMM_NEW,mympierror)
        ! Distribute the source series to the other nodes
-       call MPI_BCAST(SrcSeries,NumSrc,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
+       call MPI_BCAST(SrcSeries,NumSrc_Glob,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
 #endif
 
     endif
@@ -142,11 +142,11 @@ contains
 
     open(unit=50,file=sourcelistfile,status='old')
     ! Number of sources
-    read(50,*) NumSrc0
-    NumSrc=NumSrc0 ! no suppression in these source lists
+    read(50,*) NumSrc_Glob0
+    NumSrc_Glob=NumSrc_Glob0 ! no suppression in these source lists
     close(50)
     
-    write(logf,*) "Number of sources: ",NumSrc
+    write(logf,*) "Number of sources: ",NumSrc_Glob
 
   end subroutine establish_number_of_active_sources
 
@@ -161,10 +161,10 @@ contains
 
     open(unit=50,file=sourcelistfile,status='old')
     ! Number of sources
-    read(50,*) NumSrc0
+    read(50,*) NumSrc_Glob0
     ! Read in source positions and mass
     ns=0
-    do ns0=1,NumSrc0
+    do ns0=1,NumSrc_Glob0
        read(50,*) srcpos0(1),srcpos0(2),srcpos0(3),NormFlux(ns0)
        ns=ns0
        ! Source positions in file start at zero!
@@ -190,7 +190,7 @@ contains
     ! photons / second) here.
     ! This version (Pawlik & Schaye output): source list supplies 
     ! luminosity, only normalization is needed
-    do ns=1,NumSrc
+    do ns=1,NumSrc_Glob
        NormFlux(ns)=NormFlux(ns)/S_star_nominal
     enddo
     

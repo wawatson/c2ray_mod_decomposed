@@ -145,7 +145,7 @@ contains
     use grid, only: x, vol
     use material, only: xh, temper, ndens
     use evolve, only: phih_grid
-    use sourceprops, only: srcpos, NormFlux, NumSrc
+    use sourceprops, only: srcpos, NormFlux, NumSrc_Glob
     use photonstatistics, only: do_photonstatistics, total_ion, totrec
     use photonstatistics, only: totcollisions, dh0, grtotal_ion, photon_loss
     use photonstatistics, only: LLS_loss, grtotal_src
@@ -311,7 +311,7 @@ contains
                real(mesh(1))*real(mesh(2))*real(mesh(3))
           total_LLS_loss = LLS_loss*dt
           !total_ion=total_ion + total_photon_loss
-          totalsrc=sum(NormFlux(1:NumSrc))*s_star*dt
+          totalsrc=sum(NormFlux(1:NumSrc_Glob))*s_star*dt
           !photcons=(total_ion+LLS_loss-totcollisions)/totalsrc
           photcons=(total_ion-totcollisions)/totalsrc
           if (time > 0.0) then
