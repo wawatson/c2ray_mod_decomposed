@@ -47,7 +47,7 @@ F90FLAGS1 = $(GFORTFLAGS)
 # These flags should be added to the F90FLAGS1 depending on the executable
 # made. Specify this below on a per executable basis.
 #MPI_FLAGS = -I/usr/include/lam -DMPI # For LAM mpi (Stockholm)
-MPI_FLAGS = -DMPI # 
+MPI_FLAGS = -DMPI -DMPILOG# 
 #MPI_FLAGS = -DMPI -DMPILOG # Add more (MPI node) diagnostic output
 #OPENMP_FLAGS = -fopenmp -DMY_OPENMP # For Intel compiler
 

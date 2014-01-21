@@ -145,7 +145,7 @@ contains
     use grid, only: x, vol
     use material, only: xh, temper, ndens
     use evolve, only: phih_grid
-    use sourceprops, only: srcpos, NormFlux, NumSrc_Glob
+    use sourceprops, only: srcpos, NormFlux, NumSrc_Glob,NumSrc_Loc
     use photonstatistics, only: do_photonstatistics, total_ion, totrec
     use photonstatistics, only: totcollisions, dh0, grtotal_ion, photon_loss
     use photonstatistics, only: LLS_loss, grtotal_src
@@ -159,14 +159,27 @@ contains
     character(len=40) :: file1,file2,file3,file4,file5,file6
     real(kind=dp) :: totalsrc,photcons,total_photon_loss,total_LLS_loss
     real(kind=dp) :: totions,totphots,volfrac,massfrac
+    real(kind=dp) :: norm_flux_glob, norm_flux_loc
     logical crossing,recording_photonstats
 
 #ifdef MPI
     integer :: mympierror
 #endif
-
+    
     ! Set photon conservation flag to zero on all processors
     photcons_flag=0
+
+
+    if(do_photonstatistics)then
+
+      ! gather fluxes across all tasks
+
+      norm_flux_loc = sum(NormFlux(1:NumSrc_Loc))
+
+      call MPI_ALLREDUCE(norm_flux_loc, norm_flux_glob, 1, &
+	  &MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_NEW, MYMPIERROR)
+
+    endif
 
     ! Only produce output on rank 0
     if (rank == 0) then
@@ -177,7 +190,7 @@ contains
           file1=trim(adjustl(results_dir))// &
                "Ifront1_"//trim(adjustl(file1))//".dat"
           open(unit=51,file=file1,form="formatted",status="unknown")
-          do i=1,mesh(1)
+ 	  do i=1,mesh(1)
              write(51,"(5(1pe10.3,1x))") x(i), &
 #ifdef ALLFRAC
                   xh(i,srcpos(2,1),srcpos(3,1),0), &
@@ -191,7 +204,7 @@ contains
           enddo
           close(51)
        endif
-       
+      
        ! Stream 2
        if (streams(2) == 1) then
           write(file1,"(f6.3)") zred_now
@@ -298,7 +311,7 @@ contains
           close(58)
           close(59)
        endif
-       
+ 
        ! Check if we are tracking photon conservation
        if (do_photonstatistics) then
           ! Photon Statistics
@@ -307,12 +320,18 @@ contains
           ! added the number of photons lost from the grid. Since
           ! this number was divided by the number of cells, we
           ! multiply by this again.
+
+	  ! WW: We will need to use MPI for this sum...
+	  
           total_photon_loss=sum(photon_loss)*dt* &
                real(mesh(1))*real(mesh(2))*real(mesh(3))
           total_LLS_loss = LLS_loss*dt
           !total_ion=total_ion + total_photon_loss
-          totalsrc=sum(NormFlux(1:NumSrc_Glob))*s_star*dt
-          !photcons=(total_ion+LLS_loss-totcollisions)/totalsrc
+
+          totalsrc=norm_flux_glob*s_star*dt
+
+
+	  !photcons=(total_ion+LLS_loss-totcollisions)/totalsrc
           photcons=(total_ion-totcollisions)/totalsrc
           if (time > 0.0) then
              write(90,"(f6.3,9(1pe10.3))") &
@@ -326,6 +345,10 @@ contains
                   totcollisions/total_ion, &
                   grtotal_ion/grtotal_src
           endif
+
+
+	  ! WW: We will need to use MPI for these sums...
+
 #ifdef ALLFRAC
           totions=sum(ndens(:,:,:)*xh(:,:,:,1))*vol
           volfrac=sum(xh(:,:,:,1))/real(mesh(1)*mesh(2)*mesh(3))

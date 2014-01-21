@@ -15,7 +15,7 @@ module photonstatistics
   ! photon_loss: this is kept here, but calculated in the evolve module.
 
   use precision, only: dp
-  use my_mpi, only: rank
+  use my_mpi
   use file_admin, only: logf
   use cgsconstants, only: albpow,bh00,colh0,temph0
   use cgsphotoconstants, only: sigh
@@ -57,6 +57,7 @@ module photonstatistics
   integer,private :: j !< mesh loop index (y)
   integer,private :: k !< mesh loop index (z)
 
+  integer mympierror
 contains
 
   !----------------------------------------------------------------------------
@@ -272,9 +273,16 @@ contains
   !> Calculate the total number of ionizing photons produced
   subroutine update_grandtotal_photonstatistics(dt)
 
+    real(kind=dp) :: norm_flux_glob, norm_flux_loc      
+
     real(kind=dp),intent(in) :: dt !< time step
 
-    grtotal_src=grtotal_src+sum(NormFlux(1:NumSrc_Glob))*s_star*dt
+    ! WW: We will need to use MPI for this sum...
+
+      call MPI_ALLREDUCE(norm_flux_loc, norm_flux_glob, 1, &
+	  &MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_NEW, MYMPIERROR)
+
+    grtotal_src=grtotal_src+norm_flux_glob*s_star*dt
     grtotal_ion=grtotal_ion+total_ion-totcollisions
 
   end subroutine update_grandtotal_photonstatistics

@@ -119,10 +119,12 @@ Program C2Ray
   endif
 
   ! Initialize output
-  call setup_output ()
+  call setup_output()
+
 
   ! Initialize grid
-  call grid_ini ()
+  call grid_ini()
+
 
   if (rank == 0) &
        write(timefile,"(A,F8.1)") "Time after grid_ini: ",timestamp_wallclock ()
@@ -131,7 +133,7 @@ Program C2Ray
   write(logf,*) "Before rad_ini"
 #endif
   ! Initialize photo-ionization calculation
-  call rad_ini ( )
+  call rad_ini()
 
   if (rank == 0) &
        write(timefile,"(A,F8.1)") "Time after rad_ini: ",timestamp_wallclock ()
@@ -149,7 +151,7 @@ Program C2Ray
   write(logf,*) "Before nbody_ini"
 #endif
   ! Find the redshifts we are dealing with
-  call nbody_ini ()
+  call nbody_ini()
 
 #ifdef MPILOG
   write(logf,*) "Before source_properties_ini"
@@ -177,6 +179,7 @@ Program C2Ray
   ! (always call bacause it initializes some of the things even if 
   ! not doing cosmo. 
   call cosmology_init(zred_array(nz0),sim_time)
+
 
   if (rank == 0) &
        write(timefile,"(A,F8.1)") "Time after cosmology_init: ", &
@@ -254,6 +257,7 @@ Program C2Ray
 #endif 
      call source_properties(zred,nz,end_time-sim_time,restart)
 
+
      if (rank == 0) write(timefile,"(A,I3,A,F8.1)") &
           "Time after setting sources for step ",nz," :", &
           timestamp_wallclock ()
@@ -293,7 +297,6 @@ Program C2Ray
      ! If start of simulation output
      if (NumSrc_Glob > 0 .and. sim_time == 0.0) call output(time2zred(sim_time),sim_time,dt, &
           photcons_flag)
-
 #ifdef MPILOG     
      write(logf,*) 'Start of loop'
 #endif 
@@ -321,7 +324,6 @@ Program C2Ray
         ! Same for LLS
         if (type_of_clumping /= 5) call set_clumping(zred)
         if (use_LLS .and. type_of_LLS /= 2) call set_LLS(zred)
-
         ! Take one time step
         if (NumSrc_Glob > 0) call evolve3D(sim_time,actual_dt,iter_restart)
 
@@ -353,7 +355,7 @@ Program C2Ray
 
      if (rank == 0) write(timefile,"(A,I3,A,F8.1)") &
           "Time after finishing step ",nz," :", &
-          timestamp_wallclock ()
+          timestamp_wallclock()
 
      ! Get out: photon conservation violated
      if (stop_on_photon_violation .and. photcons_flag /= 0 .and. rank == 0) &
@@ -367,7 +369,7 @@ Program C2Ray
      endif
 
      ! Update clock counters (cpu + wall, to avoid overflowing the counter)
-     call update_clocks ()
+     call update_clocks()
 
   enddo
 
@@ -380,15 +382,15 @@ Program C2Ray
        sim_time,actual_dt,photcons_flag)
 
   ! End output streams
-  call close_down ()
+  call close_down()
   
   if (rank == 0) write(timefile,"(A,F8.1)") &
        "Time at end of simulation: ", timestamp_wallclock ()
 
   ! Report clocks (cpu and wall)
-  call report_clocks ()
+  call report_clocks()
 
   ! End the run
-  call mpi_end ()
+  call mpi_end()
 
 end Program C2Ray

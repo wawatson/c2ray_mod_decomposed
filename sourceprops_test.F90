@@ -19,8 +19,7 @@ module sourceprops
   integer,dimension(:,:),allocatable :: srcpos
   real(kind=dp),dimension(:,:),allocatable :: rsrcpos
   real(kind=dp),dimension(:),allocatable :: NormFlux
-  real(kind=dp) :: NormFlux1
-  integer,dimension(:),allocatable :: srcSeries
+  real(kind=dp) :: NormFlux1,Sum_NormFlux
   integer,dimension(:),allocatable :: srcTarget ! WW: target rank for source
   integer,dimension(:),allocatable :: target_count_by_node ! WW: array tracking how many sources each node will have
   integer,dimension(:),allocatable :: tag_array
@@ -57,13 +56,14 @@ contains
 #ifdef MPILOG     
     write(logf,*) "Check sourceprops: ",zred_now,nz,lifetime2,restart
 #endif 
-   
-    ! Deallocate source arrays
+
+    ! Deallocate arrays
     if (allocated(srcpos)) deallocate(srcpos)
     if (allocated(rsrcpos)) deallocate(rsrcpos)
     if (allocated(NormFlux)) deallocate(NormFlux)
-    if (allocated(srcSeries)) deallocate(srcSeries)
     if (allocated(srcTarget)) deallocate(srcTarget)
+    if (allocated(target_count_by_node)) deallocate(target_count_by_node)
+    if (allocated(tag_array)) deallocate(tag_array)
 
 
 #ifdef MPI
@@ -74,6 +74,7 @@ contains
     allocate(target_count_by_node(0:0))
 #endif
     target_count_by_node = 0
+    Sum_NormFlux = 0
 
     ! Rank 0 reads in sources
     if (rank == 0) then
@@ -150,7 +151,6 @@ contains
       allocate(srcpos(3,NumSrc_Loc))
       allocate(rsrcpos(3,NumSrc_Loc))
       allocate(NormFlux(NumSrc_Loc))
-      allocate(SrcSeries(NumSrc_Loc))
 
       ! Rank 0 reads in sources again to distribute them
       if(rank == 0) then
@@ -162,6 +162,7 @@ contains
 	do ns=1,NumSrc_Glob
 	  read(50,*) srcpos_xyz,NormFlux1
 	  NormFlux1=NormFlux1/S_star_nominal
+	  Sum_NormFlux = Sum_NormFlux + NormFlux1
 
 #ifdef MPI
 	  call find_target_rank(srcpos_xyz(1),srcpos_xyz(2),srcpos_xyz(3))
@@ -198,6 +199,8 @@ contains
 
 	enddo
 
+	close(50)	
+
       else ! (rank == 0) then
 #ifdef MPI
 	do ns = 1,NumSrc_Loc
@@ -207,7 +210,6 @@ contains
 
 	  call MPI_RECV(NormFlux1, 1, MPI_DOUBLE_PRECISION, 0,&
 	     &ns+NumSrc_Loc, MPI_COMM_NEW, mympi_status, mympierror)
-
 
           srcpos(1,ns) = srcpos_xyz(1) 
           srcpos(2,ns) = srcpos_xyz(2) 
@@ -219,7 +221,6 @@ contains
       endif ! of rank 0
 
       do rank_counter = 0, npr-1
-
 
 	if(rank .eq. rank_counter) then
 
@@ -237,41 +238,17 @@ contains
 
 
 	! Source is always at cell centre!!
-	do ns=1,NumSrc_Glob
+	do ns=1,NumSrc_Loc
 	  rsrcpos(1,ns)=x(srcpos(1,ns))
 	  rsrcpos(2,ns)=y(srcpos(2,ns))
 	  rsrcpos(3,ns)=z(srcpos(3,ns))
 	enddo
 
-
-#ifdef MPI
-      ! Distribute the source parameters to the other nodes
-      call MPI_BCAST(srcpos,3*NumSrc_Glob,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
-      call MPI_BCAST(rsrcpos,3*NumSrc_Glob,MPI_DOUBLE_PRECISION,0,MPI_COMM_NEW,mympierror)
-      call MPI_BCAST(NormFlux,NumSrc_Glob,MPI_DOUBLE_PRECISION,0,MPI_COMM_NEW,mympierror)
-      call MPI_BCAST(srcTarget,NumSrc_Glob,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)       
-#endif
-
       if (rank == 0) then
-	write(logf,*) 'Total flux= ',sum(NormFlux)*S_star_nominal,' s^-1'
-
-	! Create array of source numbers for generating random order
-	do ns=1,NumSrc_Glob
-	  SrcSeries(ns)=ns
-	enddo
-	! Make a random order
-	call ctrper(SrcSeries(1:NumSrc_Glob),1.0)
+	write(logf,*) 'Total flux= ',Sum_NormFlux*S_star_nominal,' s^-1'
+	flush(logf)
       endif
-
-#ifdef MPI
-      ! Distribute the source series to the other nodes
-      call MPI_BCAST(SrcSeries,NumSrc_Glob,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
-#endif
-
     endif
-
-
-    
     
   end subroutine source_properties
      

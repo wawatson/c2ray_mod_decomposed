@@ -36,7 +36,7 @@ module evolve
   use material, only: temper
   use material, only: get_temperature_point, set_temperature_point
   !use material, only: set_final_temperature_point, isothermal
-  use sourceprops, only: NumSrc_Glob, srcpos, NormFlux,srcTarget !SrcSeries
+  use sourceprops, only: NumSrc_Glob, srcpos, NormFlux,NumSrc_Loc
   use radiation, only: NumFreqBnd
   use cosmology, only: time2zred
   use photonstatistics, only: state_before, calculate_photon_statistics, &
@@ -211,7 +211,7 @@ contains
     ! Set the conv_criterion, if there are few sources we should make
     ! sure that things are converged around these sources.
     conv_criterion=min(int(convergence_fraction*mesh(1)*mesh(2)*mesh(3)), &
-         (NumSrc_Glob-1)/3)
+         (NumSrc_Glob-1)/3) ! WW: should this be global source count still?
 
     ! Report time
     if (rank == 0) write(timefile,"(A,F8.1)") &
@@ -891,19 +891,16 @@ contains
     integer :: ns1
 
     ! Source Loop - distributed for the MPI nodes
-    do ns1=1,NumSrc_Glob
+    do ns1=1,NumSrc_Loc
 
-      if(srcTarget(ns1) .eq. rank) then
 #ifdef MPILOG
 	! Report
 	write(logf,*) 'Processor ',rank,' doing: ',ns1
-	write(logf,*) ' that is source ',ns1 !SrcSeries(ns1)
 	write(logf,*) ' at:',srcpos(:,ns1)
 	flush(logf)
 #endif
 	call do_source(dt,ns1,niter)
 
-      endif
     enddo
 
   end subroutine do_grid_static
