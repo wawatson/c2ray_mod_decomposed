@@ -12,6 +12,7 @@ module grid
   use sizes, only: Ndim, mesh
   use astroconstants, only: Mpc
   use cosmology_parameters, only: h
+  use c2ray_parameters, only: control_rank
   use my_mpi
   use file_admin, only: stdinput,logf,file_input
   use nbody, only : boxsize
@@ -61,8 +62,8 @@ contains
     ! Simulation volume (comoving)
     sim_volume=(boxsize/h*Mpc)**3
 
-    ! Ask for grid size (if rank 0 and not set in nbody module)
-    if (rank == 0) then
+    ! Ask for grid size (if rank is control and not set in nbody module)
+    if (rank == control_rank) then
        if (boxsize == 0.0) then
           if (.not.file_input) then
              write(*,'(A,$)') 'Enter comoving size of grid in x,y,z (Mpc/h): '
@@ -80,15 +81,15 @@ contains
     
 #ifdef MPI
     ! Distribute the total grid size over all processors
-    call MPI_BCAST(xgrid,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_NEW,ierror)
+    call MPI_BCAST(xgrid,1,MPI_DOUBLE_PRECISION,control_rank,MPI_COMM_NEW,ierror)
 #ifdef MPILOG
     write(logf,*) ierror
 #endif
-    call MPI_BCAST(ygrid,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_NEW,ierror)
+    call MPI_BCAST(ygrid,1,MPI_DOUBLE_PRECISION,control_rank,MPI_COMM_NEW,ierror)
 #ifdef MPILOG
     write(logf,*) ierror
 #endif
-    call MPI_BCAST(zgrid,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_NEW,ierror)
+    call MPI_BCAST(zgrid,1,MPI_DOUBLE_PRECISION,control_rank,MPI_COMM_NEW,ierror)
 #ifdef MPILOG
     write(logf,*) ierror
 #endif

@@ -14,7 +14,8 @@
 !!
 !! Dependencies:
 !!   - file_admin module (for the unit of the log file where to write the report)
-!!   - my_mpi (for the value of rank, the MPI id of the current processor, reporting is only done for the rank 0 processor)
+!!   - my_mpi (for the value of rank, the MPI id of the current processor, 
+!! reporting is only done for the control rank processor)
 !!
 !! Author: Garrelt Mellema
 !!
@@ -28,6 +29,7 @@ module clocks
 
   use file_admin, only: logf, timefile, results_dir
   use my_mpi, only: rank
+  use c2ray_parameters, only: control_rank
 
   implicit none
 
@@ -63,7 +65,7 @@ contains
     call setup_cpuclock()
     call setup_wallclock()
 
-    if (rank == 0) then
+    if (rank == control_rank) then
        filename=trim(adjustl(trim(adjustl(results_dir))//"Timings.log"))
        open(unit=timefile,file=filename,status="unknown",action="write",&
             position="append")
@@ -162,7 +164,7 @@ contains
   subroutine report_cpuclock()
     
     call update_cpuclock ()
-    if (rank == 0) then
+    if (rank == control_rank) then
        write(logf,*) "CPU time: ",cpu_hours,' hours',cpu_minutes,' minutes', &
             cpu_seconds,' seconds.'
     endif
@@ -175,7 +177,7 @@ contains
   subroutine report_wallclock()
     
     call update_wallclock ()
-    if (rank == 0) then
+    if (rank == control_rank) then
        write(logf,*) "Wall clock time: ",clock_hours,' hours', &
             clock_minutes,' minutes',clock_seconds,' seconds.'
     endif

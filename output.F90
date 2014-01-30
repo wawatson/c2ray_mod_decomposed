@@ -13,11 +13,13 @@ module output_module
   use precision, only: dp
   use my_mpi
   use file_admin, only: stdinput, results_dir, file_input, logf
-  use c2ray_parameters, only: isothermal
+  use c2ray_parameters, only: isothermal,control_rank
+
 
   implicit none
   
   private
+
 
   integer,parameter :: max_input_streams=5 !< maximum number of input streams
   integer,dimension(max_input_streams) :: streams !< flag array for input streams
@@ -63,7 +65,7 @@ contains
     use photonstatistics, only: do_photonstatistics, &
          initialize_photonstatistics
 
-    if (rank == 0) then
+    if (rank == control_Rank) then
        if (.not.file_input) then
           write(*,*) "Which output streams do you want?"
           write(*,*) "Enter a mask for streams 1 through 5"
@@ -113,7 +115,7 @@ contains
     
     ! Closes down
     
-    if (rank == 0) then
+    if (rank == control_Rank) then
        if (streams(1).eq.1) close(51)
        if (streams(2).eq.1) close(52)
        if (streams(3).eq.1) close(53)
@@ -182,7 +184,7 @@ contains
     endif
 
     ! Only produce output on rank 0
-    if (rank == 0) then
+    if (rank == control_Rank) then
 
        ! Stream 1
        if (streams(1) == 1) then
@@ -321,8 +323,6 @@ contains
           ! this number was divided by the number of cells, we
           ! multiply by this again.
 
-	  ! WW: We will need to use MPI for this sum...
-	  
           total_photon_loss=sum(photon_loss)*dt* &
                real(mesh(1))*real(mesh(2))*real(mesh(3))
           total_LLS_loss = LLS_loss*dt
@@ -348,6 +348,7 @@ contains
 
 
 	  ! WW: We will need to use MPI for these sums...
+	  ! TODO: Implement MPI for these sums
 
 #ifdef ALLFRAC
           totions=sum(ndens(:,:,:)*xh(:,:,:,1))*vol
@@ -376,7 +377,7 @@ contains
     endif
     
 #ifdef MPI
-     call MPI_BCAST(photcons_flag,1,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
+     call MPI_BCAST(photcons_flag,1,MPI_INTEGER,control_rank,MPI_COMM_NEW,mympierror)
 #endif
 
   end subroutine output

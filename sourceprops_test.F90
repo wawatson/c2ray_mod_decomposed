@@ -11,7 +11,8 @@ module sourceprops
   use material, only: xh
   use grid, only: x,y,z
   use c2ray_parameters, only: phot_per_atom, lifetime, &
-       S_star_nominal, StillNeutral, Number_Sourcetypes
+       S_star_nominal, StillNeutral, Number_Sourcetypes,&
+       control_rank
 
   integer :: NumSrc_Glob, NumSrc_Loc
   integer :: srcpos_xyz(3)
@@ -76,8 +77,8 @@ contains
     target_count_by_node = 0
     Sum_NormFlux = 0
 
-    ! Rank 0 reads in sources
-    if (rank == 0) then
+    ! control rank reads in sources
+    if (rank == control_rank) then
        ! Construct the file names
        sourcelistfile=trim(adjustl(dir_src))//"test_sources.dat"
 
@@ -85,18 +86,18 @@ contains
        ! Number of sources
        read(50,*) NumSrc_Glob
 
-    endif ! end of rank 0 test
+    endif 
     
 #ifdef MPI
     ! Distribute source number to all other nodes
-    call MPI_BCAST(NumSrc_Glob,1,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
+    call MPI_BCAST(NumSrc_Glob,1,MPI_INTEGER,control_rank,MPI_COMM_NEW,mympierror)
 #endif
 
     if (NumSrc_Glob > 0) then
 
       allocate(srcTarget(NumSrc_Glob))
        
-      if (rank == 0) then
+      if (rank == control_rank) then
 	do ns=1,NumSrc_Glob
 	  read(50,*) srcpos_xyz,NormFlux1
 #ifdef MPI
@@ -122,7 +123,8 @@ contains
 #ifdef MPI
 
 
-    call MPI_BCAST(target_count_by_node,npr,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
+    call MPI_BCAST(target_count_by_node,npr,MPI_INTEGER,&
+	&control_rank,MPI_COMM_NEW,mympierror)
 
     NumSrc_Loc = target_count_by_node(rank)
 
@@ -152,8 +154,8 @@ contains
       allocate(rsrcpos(3,NumSrc_Loc))
       allocate(NormFlux(NumSrc_Loc))
 
-      ! Rank 0 reads in sources again to distribute them
-      if(rank == 0) then
+      ! Control rank reads in sources again to distribute them
+      if(rank == control_rank) then
 
 	open(unit=50,file=sourcelistfile,status="old")
 	! Number of sources
@@ -167,7 +169,7 @@ contains
 #ifdef MPI
 	  call find_target_rank(srcpos_xyz(1),srcpos_xyz(2),srcpos_xyz(3))
 
-	  if(target_rank .ne. 0) then
+	  if(target_rank .ne. control_rank) then
 	    
 	    call MPI_SEND(srcpos_xyz, sizeof(srcpos_xyz), &
 		&MPI_INTEGER, target_rank,tag_array(target_rank), &
@@ -177,7 +179,7 @@ contains
 	        & tag_array(target_rank)+target_count_by_node(target_rank),&
 	        &MPI_COMM_NEW, mympierror)
 
-	  else ! target_rank = 0
+	  else ! target_rank = control_rank
 
   	    srcpos(1,tag_array(target_rank)) = srcpos_xyz(1)
 	    srcpos(2,tag_array(target_rank)) = srcpos_xyz(2)
@@ -201,14 +203,14 @@ contains
 
 	close(50)	
 
-      else ! (rank == 0) then
+      else ! (rank == control_rank) then
 #ifdef MPI
 	do ns = 1,NumSrc_Loc
 
-	  call MPI_RECV(srcpos_xyz, sizeof(srcpos_xyz), MPI_INTEGER, 0,&
+	  call MPI_RECV(srcpos_xyz, sizeof(srcpos_xyz), MPI_INTEGER, control_rank,&
 	     &ns, MPI_COMM_NEW, mympi_status, mympierror)
 
-	  call MPI_RECV(NormFlux1, 1, MPI_DOUBLE_PRECISION, 0,&
+	  call MPI_RECV(NormFlux1, 1, MPI_DOUBLE_PRECISION, control_rank,&
 	     &ns+NumSrc_Loc, MPI_COMM_NEW, mympi_status, mympierror)
 
           srcpos(1,ns) = srcpos_xyz(1) 
@@ -244,7 +246,7 @@ contains
 	  rsrcpos(3,ns)=z(srcpos(3,ns))
 	enddo
 
-      if (rank == 0) then
+      if (rank == control_rank) then
 	write(logf,*) 'Total flux= ',Sum_NormFlux*S_star_nominal,' s^-1'
 	flush(logf)
       endif
@@ -281,9 +283,9 @@ contains
 
       nodes_dim = dims(1)
 
-      cells_per_node_per_dim1 = mesh(1)/dims(1)
-      cells_per_node_per_dim2 = mesh(2)/dims(2)
-      cells_per_node_per_dim3 = mesh(3)/dims(3)
+      cells_per_node_per_dim1 = mesh(1)
+      cells_per_node_per_dim2 = mesh(2)
+      cells_per_node_per_dim3 = mesh(3)
 
       if(cells_per_node_per_dim1 .ne. cells_per_node_per_dim2 .or.&
 	  cells_per_node_per_dim2 .ne. cells_per_node_per_dim3) then
@@ -298,19 +300,18 @@ contains
 
       endif
 
-      cell_test =  real(mesh(1))/real(dims(1)) - &
-	  &floor(real(mesh(1))/real(dims(1)))
+!      cell_test =  real(mesh(1))/real(dims(1)) - &
+!	  &floor(real(mesh(1))/real(dims(1)))
 
-      if(abs(cell_test) .gt. 0.001) then
+!      if(abs(cell_test) .gt. 0.001) then
 
-	write(*,*) 'ERROR - CHOICE OF GRID SIZE NOT &
-	    & COMPATIBLE WITH NUMBER OF MPI NODES.'
-	write(*,*) 'GRID SIZE = ',mesh(1),"Nodes per dim = ",dims(1)
+!	write(*,*) 'ERROR - CHOICE OF GRID SIZE NOT &
+!	    & COMPATIBLE WITH NUMBER OF MPI NODES.'
+!	write(*,*) 'GRID SIZE = ',mesh(1),"Nodes per dim = ",dims(1)
 
-	call MPI_ABORT(MPI_COMM_NEW,mympierror)
+!	call MPI_ABORT(MPI_COMM_NEW,mympierror)
 
-      endif
-
+!      endif
 
       ! find target file for halo:
 

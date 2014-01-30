@@ -51,7 +51,7 @@ contains
     real(kind=dp),intent(in) :: time  !< initial time
     
     ! Report cosmological parameter set used
-    if (rank == 0) then
+    if (rank == control_rank) then
        write(logf,*) "Cosmology used: ",trim(adjustl(cosmo_id))
     endif
     

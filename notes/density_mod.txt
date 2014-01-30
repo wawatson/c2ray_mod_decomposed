@@ -1,0 +1,21 @@
+Notes on altering how the density field reading (and other physical arrays such as temperature and ionisation fraction) needs to be altered.
+
+CURRENT: 
+
+The code reads the density field (in mat_ini) and other fields on node 0 and then distributes the entire fields to all the nodes. The parellelism that the code employs is to split the sources up across the nodes so that each node only handles a subset of the sources. The contribution to ionisation from each source is then calculated on the entire grid across the simulation with each node possessing all the physical field info.
+
+NEW: 
+
+Based on a spatial domain decomposition (as per cubep3m input) each node will only calculate the contribution to reionisation from the sources that fall within their domains. The density fields etc can be read in on node 0 and then sends the relevent part of the field to the node in question, or, probably more appropriately, read in on each node from separate files. For backwards compatibility both should be an option.
+
+NOTES: 
+
+Allocation of the entire density fields needs to be cut down to just allocating the local field on each task. The fields need to be carefully sent out from task 0.
+
+
+RELEVANT VARIABLES:
+
+
+
+
+

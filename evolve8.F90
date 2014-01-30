@@ -43,7 +43,7 @@ module evolve
        photon_loss, LLS_loss, report_photonstatistics, state_after, total_rates, &
        total_ionizations, update_grandtotal_photonstatistics
   use c2ray_parameters, only: convergence_fraction, S_star_nominal
-  use c2ray_parameters, only: subboxsize, max_subbox, isothermal
+  use c2ray_parameters, only: subboxsize, max_subbox, isothermal,control_rank
   use radiation, only: S_star
 
   implicit none
@@ -55,7 +55,7 @@ module evolve
   public :: evolve3D, phih_grid, evolve_ini
 
   !> Periodic boundary conditions, has to be true for this version
-  logical,parameter :: periodic_bc = .true.
+!  logical,parameter :: periodic_bc = .true. !! WW: deprecated this.
 
   !> Minimum number of MPI processes for using the master-slave setup 
   integer, parameter ::  min_numproc_master_slave=10
@@ -214,7 +214,7 @@ contains
          (NumSrc_Glob-1)/3) ! WW: should this be global source count still?
 
     ! Report time
-    if (rank == 0) write(timefile,"(A,F8.1)") &
+    if (rank == control_rank) write(timefile,"(A,F8.1)") &
          "Time before starting iteration: ", timestamp_wallclock ()
 
     ! Iterate to reach convergence for multiple sources
@@ -246,7 +246,7 @@ contains
           !call set_final_temperature_point
 
           ! Report
-          if (rank == 0) then
+          if (rank == control_rank) then
              write(logf,*) "Multiple sources convergence reached"
              write(logf,*) "Test 1 values: ",conv_flag, conv_criterion
              write(logf,*) "Test 2 values: ",rel_change_sum_xh, &
@@ -256,7 +256,7 @@ contains
        else
           if (niter > 100) then
              ! Complain about slow convergence
-             if (rank == 0) write(logf,*) 'Multiple sources not converging'
+             if (rank == control_rank) write(logf,*) 'Multiple sources not converging'
              exit
           endif
        endif
@@ -270,11 +270,11 @@ contains
        call pass_all_sources (niter,dt)
 
        ! Report subbox statistics
-       if (rank == 0) &
+       if (rank == control_rank) &
             write(logf,*) "Average number of subboxes: ", &
 	    real(sum_nbox_all)/real(NumSrc_Glob)
 
-       if (rank == 0) then
+       if (rank == control_rank) then
           call system_clock(wallclock2,countspersec)
           ! Write iteration dump if more than 15 minutes have passed.
           ! system_clock starts counting at 0 when it reaches
@@ -295,7 +295,7 @@ contains
        !call output_intermediate(time2zred(time+dt),niter)
 
        ! Report time
-       if (rank == 0) write(timefile,"(A,I3,A,F8.1)") &
+       if (rank == control_rank) write(timefile,"(A,I3,A,F8.1)") &
             "Time after iteration ",niter," : ", timestamp_wallclock ()
     enddo
 
@@ -365,10 +365,10 @@ contains
 #endif
 
     if (restart == 0) then
-       if (rank == 0) &
+       if (rank == control_rank) &
             write(logf,*) "Warning: start_from_dump called incorrectly"
     else
-       if (rank == 0) then
+       if (rank == control_rank) then
 
           ! Report time
           write(timefile,"(A,F8.1)") &
@@ -411,20 +411,20 @@ contains
 #ifdef MPI       
        ! Distribute the input parameters to the other nodes
        call MPI_BCAST(niter,1, &
-            MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
+            MPI_INTEGER,control_rank,MPI_COMM_NEW,mympierror)
        call MPI_BCAST(photon_loss_all,NumFreqBnd, &
-            MPI_DOUBLE_PRECISION,0,MPI_COMM_NEW,mympierror)
+            MPI_DOUBLE_PRECISION,control_rank,MPI_COMM_NEW,mympierror)
 #ifdef ALLFRAC
        call MPI_BCAST(xh_av,mesh(1)*mesh(2)*mesh(3)*2, &
-            MPI_DOUBLE_PRECISION,0,MPI_COMM_NEW,mympierror)
+            MPI_DOUBLE_PRECISION,control_rank,MPI_COMM_NEW,mympierror)
        call MPI_BCAST(xh_intermed,mesh(1)*mesh(2)*mesh(3)*2, &
-            MPI_DOUBLE_PRECISION,0,&
+            MPI_DOUBLE_PRECISION,control_rank,&
             MPI_COMM_NEW,mympierror)
 #else
        call MPI_BCAST(xh_av,mesh(1)*mesh(2)*mesh(3), &
-            MPI_DOUBLE_PRECISION,0,MPI_COMM_NEW,mympierror)
+            MPI_DOUBLE_PRECISION,control_rank,MPI_COMM_NEW,mympierror)
        call MPI_BCAST(xh_intermed,mesh(1)*mesh(2)*mesh(3), &
-            MPI_DOUBLE_PRECISION,0,&
+            MPI_DOUBLE_PRECISION,control_rank,&
             MPI_COMM_NEW,mympierror)
 #endif
        !if (.not.isothermal) then
@@ -461,7 +461,7 @@ contains
     integer :: mympierror
 #endif
 
-    if (rank == 0) write(logf,*) 'Doing all sources '
+    if (rank == control_rank) write(logf,*) 'Doing all sources '
     ! reset global rates to zero for this iteration
     phih_grid(:,:,:)=0.0
     !phiheat(:,:,:)=0.0
@@ -587,7 +587,7 @@ contains
     integer,dimension(Ndim) :: pos
 
     ! Report photon losses over grid boundary 
-    if (rank == 0) write(logf,*) 'photon loss counter: ',photon_loss_all(:)
+    if (rank == control_rank) write(logf,*) 'photon loss counter: ',photon_loss_all(:)
     
     ! Turn total photon loss into a mean per cell (used in evolve0d_global)
     ! GM/110225: Possibly this should be 
@@ -600,7 +600,7 @@ contains
     photon_loss(:)=photon_loss_all(:)/(real(mesh(1))*real(mesh(2))*real(mesh(3)))
  
     ! Report minimum value of xh_av(0) to check for zeros
-    if (rank == 0) then
+    if (rank == control_rank) then
 #ifdef ALLFRAC
        write(logf,*) "min xh_av(0): ",minval(xh_av(:,:,:,0))
 #else
@@ -612,7 +612,7 @@ contains
     conv_flag=0 ! will be used to check for convergence
     
     ! Loop through the entire mesh
-    if (rank == 0) write(logf,*) 'Doing global '
+    if (rank == control_rank) write(logf,*) 'Doing global '
     do k=1,mesh(3)
        do j=1,mesh(2)
           do i=1,mesh(1)
@@ -623,7 +623,7 @@ contains
     enddo
     
     ! Report on convergence and intermediate result
-    if (rank == 0) then
+    if (rank == control_rank) then
        write(logf,*) "Number of non-converged points: ",conv_flag
        write(logf,*) "Intermediate result for mean H ionization fraction: ", &
 #ifdef ALLFRAC
@@ -653,7 +653,7 @@ contains
     real(kind=dp),intent(in) :: dt  !< time step, passed on to evolve0D
     integer,intent(in) :: niter !< interation counter, passed on to evolve0D
 
-    if (rank == 0) then
+    if (rank == control_rank) then
        call do_grid_master ()
     else
        call do_grid_slave (dt,niter)
@@ -945,13 +945,15 @@ contains
     ! even-sized we trave mesh/2 cells to the left and mesh/2-1
     ! cell to the right. If it is odd, it is mesh/2 in either direction.
     ! The mod(mesh,2) takes care of handling this.
-    if (periodic_bc) then
-       lastpos_r(:)=srcpos(:,ns)+min(max_subbox,mesh(:)/2-1+mod(mesh(:),2))
-       lastpos_l(:)=srcpos(:,ns)-min(max_subbox,mesh(:)/2)
-    else
+
+    ! WW: deprecated this
+    !    if (periodic_bc) then
+!       lastpos_r(:)=srcpos(:,ns)+min(max_subbox,mesh(:)/2-1+mod(mesh(:),2))
+!       lastpos_l(:)=srcpos(:,ns)-min(max_subbox,mesh(:)/2)
+!    else
        lastpos_r(:)=min(srcpos(:,ns)+max_subbox,mesh(:))
        lastpos_l(:)=max(srcpos(:,ns)-max_subbox,1)
-    endif
+!    endif
 
     ! Loop through grid in the order required by 
     ! short characteristics
@@ -1791,7 +1793,7 @@ contains
                   
        ! Warn about non-convergence and terminate iteration
        if (nit > 5000) then
-          if (rank == 0) then
+          if (rank == control_rank) then
              write(logf,*) 'Convergence failing (global)'
              write(logf,*) 'xh: ',yh_av(0),yh_av0
           endif
@@ -2084,8 +2086,8 @@ contains
     character(len=3) :: niter_string
     character(len=40) :: file1
 
-    ! Only produce output on rank 0
-    if (rank == 0) then
+    ! Only produce output on control rank
+    if (rank == control_rank) then
 
        write(file1,"(f6.3)") zred_now
        write(niter_string,"(i3.3)") niter

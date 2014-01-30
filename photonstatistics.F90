@@ -25,7 +25,7 @@ module photonstatistics
   use tped, only: electrondens
   use sourceprops, only: NormFlux, NumSrc_Glob
   use radiation, only: S_star, NumFreqBnd
-  use c2ray_parameters, only: type_of_clumping
+  use c2ray_parameters, only: type_of_clumping,control_rank
 
   implicit none
 
@@ -254,7 +254,7 @@ contains
     totalsrc=sum(NormFlux(1:NumSrc_Glob))*s_star*dt
     !photcons=(total_ion-totcollisions)/totalsrc
     photcons=(total_ion+LLS_loss-totcollisions)/totalsrc
-    if (rank == 0) then
+    if (rank == control_rank) then
        write(logf,"(8(1pe10.3))") &
             total_ion, totalsrc, &
             photcons, &

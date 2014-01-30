@@ -12,6 +12,7 @@ module times
   ! This module handles the time variables
 
   use precision, only: dp
+  use c2ray_parameters, only: control_rank
   use my_mpi
   use file_admin, only: stdinput, file_input
   use astroconstants, only: YEAR
@@ -41,7 +42,7 @@ contains
     integer :: ierror
 #endif
 
-    if (rank == 0) then
+    if (rank == control_Rank) then
        ! Ask for number of time steps
        if (.not.file_input) &
             write(*,'(A,$)') 'Enter number of time steps between slices: '
@@ -55,9 +56,9 @@ contains
 
 #ifdef MPI       
     ! Distribute the input parameters to the other nodes
-    call MPI_BCAST(number_timesteps,1,MPI_INTEGER,0,&
+    call MPI_BCAST(number_timesteps,1,MPI_INTEGER,control_rank,&
          MPI_COMM_NEW,ierror)
-    call MPI_BCAST(number_outputs,1,MPI_INTEGER,0,MPI_COMM_NEW,ierror)
+    call MPI_BCAST(number_outputs,1,MPI_INTEGER,control_rank,MPI_COMM_NEW,ierror)
 #endif
     
   end subroutine time_ini

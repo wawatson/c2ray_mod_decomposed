@@ -40,7 +40,7 @@ FC = gfortran # GNU compiler
 MPIFC = mpif90 # MPI compiler
 
 # F90 options (ifort)
-GFORTFLAGS = -O3 #-DGFORT 
+GFORTFLAGS = -O3 -cpp #-DGFORT 
 # Processor dependent optimization
 F90FLAGS1 = $(GFORTFLAGS) 
 

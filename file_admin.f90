@@ -32,6 +32,9 @@ module file_admin
 
   public :: flag_for_file_input
 
+  integer, public  :: output_rank = 1
+
+
 contains
   
   !> Set the file_input logical to distinguish between input

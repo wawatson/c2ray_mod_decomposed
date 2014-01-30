@@ -1,0 +1,20 @@
+Notes on altering how the variables assigned to the mesh need to be stored locally on each task based on the new domain decomposition.
+
+CURRENT: 
+
+Each MPI node has the entire simulation stored. Various variables, such as temperature, ionised fraction and density are stored in mesh-sezed arrays.
+
+NEW: 
+
+Need to store these in local meshes on each node. 
+
+NOTES: 
+
+Can we keep the structure of the code identical to how it is now but a) rescale the meshes such that each MPI zone contains a full mesh? If so we could turn periodicity off and run the ray-tracing to the edge of each zone. (We then need to worry about passing the data across boundaries...).
+
+RELEVANT VARIABLES:
+
+
+
+
+

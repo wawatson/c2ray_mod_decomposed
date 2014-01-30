@@ -25,7 +25,8 @@ module my_mpi
   ! mpi_end:      close down the MPI interface
   ! fnd3dnbrs:    find neighbours in 3D domain decomposition
 
-  ! rank 0 has a log file called C2Ray.log associated with it. If
+  ! the control rank (set in c2ray_parameters) has a log file 
+  ! called C2Ray.log associated with it. If
   ! the log unit is equal to 6, no file is opened and all log output
   ! is sent to standard output.
   ! If the code is compiled with the option -DMPILOG the other processors get
@@ -53,6 +54,8 @@ module my_mpi
   USE OMP_LIB, only: omp_get_num_threads, omp_get_thread_num
 #endif
 #endif
+
+  use c2ray_parameters, only: control_rank
 
   implicit none
 
@@ -90,7 +93,7 @@ contains
 
     call mpi_basic()
 
-    if (rank == 0) then
+    if (rank == control_rank) then
        if (logf /= 6) then
           filename=trim(adjustl(trim(adjustl(results_dir))//"C2Ray.log"))
           open(unit=logf,file=filename,status="unknown",action="write",&
@@ -111,7 +114,7 @@ contains
 
     ! Report OpenMP usage
 #ifdef MY_OPENMP
-    if (rank == 0) then
+    if (rank == control_rank) then
        write(logf,*) " Running in OpenMP mode"
        write(logf,*) ' Number of OpenMP threads on MPI rank 0 is ',nthreads
     endif
@@ -121,7 +124,7 @@ contains
     ! Open processor dependent log file
     write(unit=number,fmt="(I4)") rank
     filename=trim(adjustl("log."//trim(adjustl(number))))
-    if (rank /= 0) open(unit=logf,file=filename,status="unknown",action="write")
+    if (rank /= control_rank) open(unit=logf,file=filename,status="unknown",action="write")
 
     write(unit=logf,fmt=*) "Log file for rank ",rank," of a total of ",npr
 

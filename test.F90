@@ -39,6 +39,8 @@ module nbody
   use astroconstants, only: Mpc, M_SOLAR, YEAR
   use my_mpi
   use cosmology_parameters, only: rho_crit_0, Omega0, h, H0
+  use c2ray_parameters, only: control_rank
+  
 
   implicit none
 
@@ -71,7 +73,7 @@ contains
     integer :: len, status
 
     ! Construct redshift sequence
-    if (rank == 0) then
+    if (rank == control_rank) then
 
        ! Set the number of redshift slices
        NumZred=5
@@ -94,9 +96,9 @@ contains
 
 #ifdef MPI
     ! Distribute the input parameters to the other nodes
-    call MPI_BCAST(NumZred,1,MPI_INTEGER,0,MPI_COMM_NEW,mympierror)
-    if (rank /= 0) allocate(zred_array(NumZred))
-    call MPI_BCAST(zred_array,NumZred,MPI_DOUBLE_PRECISION,0,MPI_COMM_NEW,&
+    call MPI_BCAST(NumZred,1,MPI_INTEGER,control_rank,MPI_COMM_NEW,mympierror)
+    if (rank /= control_rank) allocate(zred_array(NumZred))
+    call MPI_BCAST(zred_array,NumZred,MPI_DOUBLE_PRECISION,control_rank,MPI_COMM_NEW,&
          mympierror)
 #endif
 

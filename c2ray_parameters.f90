@@ -18,6 +18,12 @@ module c2ray_parameters
 
   implicit none
 
+  !> Which rank controls IO? (WW)
+#ifdef MPI
+  integer,parameter :: control_rank = 1
+#else
+  integer,parameter :: control_rank = 0
+#endif
   !> Which fraction of the cells can be left unconverged in order
   !! to improve performance (used in rad_evolve3d)
   real(kind=dp),parameter :: convergence_fraction=1.0e-4

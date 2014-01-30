@@ -57,7 +57,8 @@ module radiation
   use cgsphotoconstants, only: frth0, frtop1, frtop2, sh0, betah0, sigh
   use astroconstants, only: R_SOLAR, L_SOLAR
   use romberg, only: scalar_romberg,vector_romberg,romberg_initialisation
-  use c2ray_parameters, only: teff_nominal, S_star_nominal, isothermal
+  use c2ray_parameters, only: teff_nominal, S_star_nominal, isothermal,&
+      &control_rank
 
   implicit none
 
@@ -202,7 +203,7 @@ contains
     ! spectral parameters are not set in the c2ray_parameters
     ! Note that it is assumed that if teff_nominal is set, 
     ! S_star_nominal is ALSO set.
-    if (rank == 0 .and. teff_nominal == 0.0) then
+    if (rank == control_rank .and. teff_nominal == 0.0) then
        write(*,'(A)') ' '
        teff=0.0
        do while (teff.lt.2000.0.or.teff.gt.200000.) 
@@ -270,13 +271,13 @@ contains
 
 #ifdef MPI       
     ! Distribute the input parameters to the other nodes
-    call MPI_BCAST(teff,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_NEW, &
+    call MPI_BCAST(teff,1,MPI_DOUBLE_PRECISION,control_rank,MPI_COMM_NEW, &
          ierror)
-    call MPI_BCAST(rstar,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_NEW, &
+    call MPI_BCAST(rstar,1,MPI_DOUBLE_PRECISION,control_rank,MPI_COMM_NEW, &
          ierror)
-    call MPI_BCAST(lstar,1,MPI_DOUBLE_PRECISION,0, & 
+    call MPI_BCAST(lstar,1,MPI_DOUBLE_PRECISION,control_rank, & 
          MPI_COMM_NEW,ierror)
-    call MPI_BCAST(S_star,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_NEW, &
+    call MPI_BCAST(S_star,1,MPI_DOUBLE_PRECISION,control_rank,MPI_COMM_NEW, &
          ierror)
 #endif
     
@@ -338,7 +339,7 @@ contains
     endif
     
     ! Report back
-    if (rank == 0) then
+    if (rank == control_rank) then
        write(logf,'(/a)')           'Using a black body with'
        write(logf,'(a,1pe10.3,a)')   ' Teff=       ',teff,' K'
        write(logf,'(a,1pe10.3,a)')   ' Radius=     ',rstar/r_solar, &
@@ -400,7 +401,7 @@ contains
     tau(0)=0.0
 
     ! Warn about grey opacities:
-    if (grey .and. rank == 0) write(logf,*) 'WARNING: Using grey opacities'
+    if (grey .and. rank == control_rank) write(logf,*) 'WARNING: Using grey opacities'
 
     ! frequency band 1
     ! (there is space for NumFreqBnd frequency bands, only
