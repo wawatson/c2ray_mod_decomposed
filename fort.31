@@ -1,222 +1,323 @@
-Time after grid_ini:      1.3
-Time after rad_ini:      1.3
-Time after mat_ini:      1.4
-Time after cosmology_init:      1.5
-Time before starting redshift evolution step   1 :     1.5
-Time after setting sources for step   1 :     1.6
-Time after setting material properties for step   1 :     1.6
-Time before starting iteration:      2.0
-Time after iteration   1 :      3.3
-Time after iteration   2 :      4.6
-Time after iteration   3 :      5.8
-Time after iteration   4 :      7.1
-Time after iteration   5 :      9.0
-Time after iteration   6 :     10.3
-Time after iteration   7 :     11.6
-Time after iteration   8 :     12.8
-Time after iteration   9 :     14.1
-Time after iteration  10 :     15.3
-Time after iteration  11 :     16.6
-Time after iteration  12 :     17.8
-Time after iteration  13 :     19.1
-Time after iteration  14 :     20.3
-Time after iteration  15 :     21.6
-Time after iteration  16 :     22.8
-Time after iteration  17 :     24.0
-Time after iteration  18 :     25.3
-Time after iteration  19 :     26.5
-Time after iteration  20 :     27.7
-Time after iteration  21 :     29.0
-Time after iteration  22 :     30.4
-Time after iteration  23 :     31.6
-Time after iteration  24 :     32.9
-Time after iteration  25 :     34.1
-Time after iteration  26 :     35.3
-Time after iteration  27 :     36.6
-Time after iteration  28 :     37.8
-Time after iteration  29 :     39.1
-Time after iteration  30 :     40.3
-Time after iteration  31 :     41.6
-Time after iteration  32 :     42.8
-Time after iteration  33 :     44.0
-Time after iteration  34 :     45.3
-Time after iteration  35 :     46.5
-Time after iteration  36 :     47.7
-Time after iteration  37 :     49.0
-Time after iteration  38 :     50.3
-Time after iteration  39 :     51.5
-Time after iteration  40 :     52.8
-Time after iteration  41 :     54.0
-Time after iteration  42 :     55.2
-Time after iteration  43 :     56.5
-Time after iteration  44 :     57.7
-Time after iteration  45 :     59.0
-Time after iteration  46 :     60.2
-Time after iteration  47 :     61.5
-Time before starting iteration:     61.9
-Time after iteration   1 :     63.1
-Time after iteration   2 :     64.4
-Time after iteration   3 :     65.7
-Time after iteration   4 :     66.9
-Time after iteration   5 :     68.1
-Time after iteration   6 :     69.4
-Time after iteration   7 :     70.7
-Time after iteration   8 :     72.0
-Time after iteration   9 :     73.3
-Time after iteration  10 :     74.6
-Time after iteration  11 :     75.9
-Time after iteration  12 :     77.1
-Time after iteration  13 :     78.4
-Time after iteration  14 :     79.7
-Time after iteration  15 :     80.9
-Time after iteration  16 :     82.1
-Time after iteration  17 :     83.4
-Time after iteration  18 :     84.6
-Time after iteration  19 :     85.9
-Time after iteration  20 :     87.1
-Time after iteration  21 :     89.1
-Time after iteration  22 :     90.7
-Time after iteration  23 :     92.4
-Time after iteration  24 :     94.0
-Time after iteration  25 :     95.9
-Time after iteration  26 :     97.2
-Time after iteration  27 :     98.4
-Time after iteration  28 :     99.7
-Time after iteration  29 :    100.9
-Time before starting iteration:    101.4
-Time after iteration   1 :    102.7
-Time after iteration   2 :    103.9
-Time after iteration   3 :    105.2
-Time after iteration   4 :    106.4
-Time after iteration   5 :    107.6
-Time after iteration   6 :    108.9
-Time after iteration   7 :    110.2
-Time after iteration   8 :    111.4
-Time after iteration   9 :    112.8
-Time after iteration  10 :    114.1
-Time after iteration  11 :    115.4
-Time after iteration  12 :    116.7
-Time after iteration  13 :    117.9
-Time after iteration  14 :    119.1
-Time after iteration  15 :    120.4
-Time after iteration  16 :    121.6
-Time after iteration  17 :    122.9
-Time after iteration  18 :    124.1
-Time after iteration  19 :    125.4
-Time after iteration  20 :    126.6
-Time after iteration  21 :    127.9
-Time after iteration  22 :    129.2
-Time after iteration  23 :    130.4
-Time after iteration  24 :    131.7
-Time after iteration  25 :    133.0
-Time after iteration  26 :    134.4
-Time after iteration  27 :    135.6
-Time after iteration  28 :    136.9
-Time before starting iteration:    137.3
-Time after iteration   1 :    138.7
-Time after iteration   2 :    139.9
-Time after iteration   3 :    141.2
-Time after iteration   4 :    142.4
-Time after iteration   5 :    143.7
-Time after iteration   6 :    145.4
-Time after iteration   7 :    146.8
-Time after iteration   8 :    148.1
-Time after iteration   9 :    149.4
-Time after iteration  10 :    150.6
-Time after iteration  11 :    151.8
-Time after iteration  12 :    153.2
-Time after iteration  13 :    154.5
-Time after iteration  14 :    155.7
-Time after iteration  15 :    157.0
-Time after iteration  16 :    158.2
-Time after iteration  17 :    159.5
-Time after iteration  18 :    160.7
-Time after iteration  19 :    162.0
-Time after finishing step   1 :   162.7
-Time before starting redshift evolution step   2 :   162.7
-Time after setting sources for step   2 :   162.8
-Time after setting material properties for step   2 :   162.8
-Time before starting iteration:    162.9
-Time after iteration   1 :    164.4
-Time after iteration   2 :    165.8
-Time after iteration   3 :    167.2
-Time after iteration   4 :    168.5
-Time after iteration   5 :    169.8
-Time after iteration   6 :    171.0
-Time after iteration   7 :    172.4
-Time after iteration   8 :    173.8
-Time after iteration   9 :    175.1
-Time after iteration  10 :    176.4
-Time after iteration  11 :    177.7
-Time after iteration  12 :    179.0
-Time after iteration  13 :    180.3
-Time after iteration  14 :    181.7
-Time after iteration  15 :    183.0
-Time after iteration  16 :    184.3
-Time after iteration  17 :    185.5
-Time after iteration  18 :    186.9
-Time after iteration  19 :    188.2
-Time after iteration  20 :    189.5
-Time after iteration  21 :    190.8
-Time before starting iteration:    191.2
-Time after iteration   1 :    192.5
-Time after iteration   2 :    193.8
-Time after iteration   3 :    195.2
-Time after iteration   4 :    196.5
-Time after iteration   5 :    197.8
-Time after iteration   6 :    199.2
-Time after iteration   7 :    200.5
-Time after iteration   8 :    201.8
-Time after iteration   9 :    203.0
-Time after iteration  10 :    204.3
-Time after iteration  11 :    205.5
-Time after iteration  12 :    206.9
-Time after iteration  13 :    208.2
-Time after iteration  14 :    209.4
-Time after iteration  15 :    210.7
-Time after iteration  16 :    212.0
-Time after iteration  17 :    213.3
-Time after iteration  18 :    214.6
-Time after iteration  19 :    216.1
-Time before starting iteration:    216.6
-Time after iteration   1 :    217.8
-Time after iteration   2 :    219.2
-Time after iteration   3 :    220.4
-Time after iteration   4 :    221.7
-Time after iteration   5 :    222.9
-Time after iteration   6 :    224.2
-Time after iteration   7 :    225.4
-Time after iteration   8 :    226.7
+Time after grid_ini:      1.2
+Time after rad_ini:      1.2
+Time after mat_ini:      1.2
+Time after cosmology_init:      1.2
+Time before starting redshift evolution step   1 :     1.2
+Time after setting sources for step   1 :     1.5
+Time after setting material properties for step   1 :     1.5
+Time before starting iteration:      1.9
+Time after iteration   1 :      2.9
+Time after iteration   2 :      4.0
+Time after iteration   3 :      5.1
+Time after iteration   4 :      6.4
+Time after iteration   5 :      7.7
+Time after iteration   6 :      9.0
+Time after iteration   7 :     10.3
+Time after iteration   8 :     11.6
+Time after iteration   9 :     12.8
+Time after iteration  10 :     14.1
+Time after iteration  11 :     15.4
+Time after iteration  12 :     16.7
+Time after iteration  13 :     18.0
+Time after iteration  14 :     19.3
+Time after iteration  15 :     20.5
+Time after iteration  16 :     21.8
+Time after iteration  17 :     23.2
+Time after iteration  18 :     24.4
+Time after iteration  19 :     25.7
+Time after iteration  20 :     27.0
+Time after iteration  21 :     28.2
+Time after iteration  22 :     29.4
+Time after iteration  23 :     30.6
+Time after iteration  24 :     31.9
+Time after iteration  25 :     33.2
+Time after iteration  26 :     34.6
+Time after iteration  27 :     35.7
+Time after iteration  28 :     37.1
+Time after iteration  29 :     38.4
+Time after iteration  30 :     39.7
+Time after iteration  31 :     41.0
+Time after iteration  32 :     42.3
+Time after iteration  33 :     43.6
+Time after iteration  34 :     45.0
+Time after iteration  35 :     46.1
+Time after iteration  36 :     47.2
+Time after iteration  37 :     48.3
+Time after iteration  38 :     49.4
+Time after iteration  39 :     50.6
+Time after iteration  40 :     51.8
+Time after iteration  41 :     52.9
+Time before starting iteration:     53.4
+Time after iteration   1 :     54.6
+Time after iteration   2 :     55.7
+Time after iteration   3 :     56.9
+Time after iteration   4 :     57.9
+Time after iteration   5 :     59.1
+Time after iteration   6 :     60.2
+Time after iteration   7 :     61.3
+Time after iteration   8 :     62.5
+Time after iteration   9 :     63.6
+Time after iteration  10 :     64.9
+Time after iteration  11 :     66.0
+Time after iteration  12 :     67.1
+Time after iteration  13 :     68.3
+Time after iteration  14 :     69.6
+Time after iteration  15 :     70.9
+Time after iteration  16 :     72.2
+Time after iteration  17 :     73.4
+Time after iteration  18 :     74.7
+Time after iteration  19 :     76.0
+Time after iteration  20 :     77.2
+Time after iteration  21 :     78.4
+Time after iteration  22 :     79.7
+Time after iteration  23 :     81.0
+Time after iteration  24 :     82.3
+Time after iteration  25 :     83.6
+Time after iteration  26 :     84.7
+Time after iteration  27 :     85.8
+Time after iteration  28 :     86.9
+Time after iteration  29 :     88.3
+Time after iteration  30 :     89.6
+Time after iteration  31 :     90.8
+Time after iteration  32 :     92.0
+Time after iteration  33 :     93.1
+Time before starting iteration:     93.5
+Time after iteration   1 :     94.6
+Time after iteration   2 :     95.7
+Time after iteration   3 :     97.0
+Time after iteration   4 :     98.1
+Time after iteration   5 :     99.2
+Time after iteration   6 :    100.2
+Time after iteration   7 :    101.3
+Time after iteration   8 :    102.5
+Time after iteration   9 :    103.7
+Time after iteration  10 :    104.8
+Time after iteration  11 :    105.9
+Time after iteration  12 :    106.9
+Time after iteration  13 :    108.0
+Time after iteration  14 :    109.3
+Time after iteration  15 :    110.4
+Time after iteration  16 :    111.7
+Time after iteration  17 :    112.8
+Time after iteration  18 :    113.9
+Time after iteration  19 :    115.0
+Time after iteration  20 :    116.0
+Time after iteration  21 :    117.1
+Time after iteration  22 :    118.1
+Time after iteration  23 :    119.4
+Time after iteration  24 :    120.5
+Time after iteration  25 :    121.7
+Time before starting iteration:    122.1
+Time after iteration   1 :    123.3
+Time after iteration   2 :    124.5
+Time after iteration   3 :    125.8
+Time after iteration   4 :    127.2
+Time after iteration   5 :    128.3
+Time after iteration   6 :    129.5
+Time after iteration   7 :    130.7
+Time after iteration   8 :    132.0
+Time after iteration   9 :    133.1
+Time after iteration  10 :    134.3
+Time after iteration  11 :    135.5
+Time after iteration  12 :    136.7
+Time after iteration  13 :    138.1
+Time after iteration  14 :    139.4
+Time after iteration  15 :    140.7
+Time after iteration  16 :    141.8
+Time after iteration  17 :    142.9
+Time after iteration  18 :    144.1
+Time after iteration  19 :    145.3
+Time after iteration  20 :    146.6
+Time after iteration  21 :    147.7
+Time after iteration  22 :    149.0
+Time after iteration  23 :    150.2
+Time after iteration  24 :    151.3
+Time after iteration  25 :    152.4
+Time after finishing step   1 :   153.1
+Time before starting redshift evolution step   2 :   153.1
+Time after setting sources for step   2 :   153.4
+Time after setting material properties for step   2 :   153.4
+Time before starting iteration:    153.4
+Time after iteration   1 :    154.7
+Time after iteration   2 :    156.0
+Time after iteration   3 :    157.2
+Time after iteration   4 :    158.4
+Time after iteration   5 :    159.5
+Time after iteration   6 :    160.6
+Time after iteration   7 :    161.7
+Time after iteration   8 :    162.8
+Time after iteration   9 :    163.9
+Time after iteration  10 :    165.0
+Time after iteration  11 :    166.1
+Time after iteration  12 :    167.1
+Time after iteration  13 :    168.2
+Time after iteration  14 :    169.3
+Time after iteration  15 :    170.3
+Time after iteration  16 :    171.4
+Time after iteration  17 :    172.5
+Time after iteration  18 :    173.7
+Time after iteration  19 :    174.7
+Time after iteration  20 :    175.8
+Time after iteration  21 :    176.9
+Time before starting iteration:    177.4
+Time after iteration   1 :    178.6
+Time after iteration   2 :    179.8
+Time after iteration   3 :    180.9
+Time after iteration   4 :    182.1
+Time after iteration   5 :    183.1
+Time after iteration   6 :    184.3
+Time after iteration   7 :    185.6
+Time after iteration   8 :    186.8
+Time after iteration   9 :    188.1
+Time after iteration  10 :    189.3
+Time after iteration  11 :    190.4
+Time after iteration  12 :    191.5
+Time after iteration  13 :    192.6
+Time after iteration  14 :    193.7
+Time after iteration  15 :    194.8
+Time after iteration  16 :    195.8
+Time after iteration  17 :    196.9
+Time after iteration  18 :    198.1
+Time before starting iteration:    198.6
+Time after iteration   1 :    199.8
+Time after iteration   2 :    200.8
+Time after iteration   3 :    202.0
+Time after iteration   4 :    203.3
+Time after iteration   5 :    204.5
+Time after iteration   6 :    205.7
+Time after iteration   7 :    206.9
+Time after iteration   8 :    208.1
+Time after iteration   9 :    209.3
+Time after iteration  10 :    210.4
+Time after iteration  11 :    211.4
+Time after iteration  12 :    212.5
+Time after iteration  13 :    213.6
+Time after iteration  14 :    214.6
+Time after iteration  15 :    215.8
+Time after iteration  16 :    216.9
+Time before starting iteration:    217.3
+Time after iteration   1 :    218.4
+Time after iteration   2 :    219.6
+Time after iteration   3 :    220.9
+Time after iteration   4 :    222.1
+Time after iteration   5 :    223.4
+Time after iteration   6 :    224.7
+Time after iteration   7 :    225.8
+Time after iteration   8 :    226.9
 Time after iteration   9 :    228.0
-Time after iteration  10 :    229.3
-Time after iteration  11 :    230.6
-Time after iteration  12 :    231.9
-Time after iteration  13 :    233.6
-Time after iteration  14 :    235.0
-Time after iteration  15 :    236.4
-Time after iteration  16 :    237.7
-Time after iteration  17 :    239.0
-Time before starting iteration:    239.6
-Time after iteration   1 :    240.8
-Time after iteration   2 :    242.1
-Time after iteration   3 :    243.5
-Time after iteration   4 :    244.7
-Time after iteration   5 :    246.0
-Time after iteration   6 :    247.4
-Time after iteration   7 :    248.8
-Time after iteration   8 :    250.0
-Time after iteration   9 :    251.4
-Time after iteration  10 :    252.8
-Time after iteration  11 :    254.4
-Time after iteration  12 :    255.6
-Time after iteration  13 :    257.1
-Time after iteration  14 :    258.3
-Time after iteration  15 :    259.7
-Time after finishing step   2 :   260.3
-Time before starting redshift evolution step   3 :   260.3
-Time after setting sources for step   3 :   260.3
-Time after setting material properties for step   3 :   260.3
-Time before starting iteration:    260.5
-Time after iteration   1 :    261.8
-Time after iteration   2 :    263.0
-Time after iteration   3 :    264.3
+Time after iteration  10 :    229.2
+Time after iteration  11 :    230.4
+Time after iteration  12 :    231.7
+Time after iteration  13 :    232.8
+Time after iteration  14 :    234.0
+Time after finishing step   2 :   234.6
+Time before starting redshift evolution step   3 :   234.6
+Time after setting sources for step   3 :   234.6
+Time after setting material properties for step   3 :   234.6
+Time before starting iteration:    234.8
+Time after iteration   1 :    235.9
+Time after iteration   2 :    237.1
+Time after iteration   3 :    238.3
+Time after iteration   4 :    239.6
+Time after iteration   5 :    240.9
+Time after iteration   6 :    242.2
+Time after iteration   7 :    243.5
+Time after iteration   8 :    244.8
+Time after iteration   9 :    246.0
+Time after iteration  10 :    247.3
+Time after iteration  11 :    248.5
+Time after iteration  12 :    249.6
+Time after iteration  13 :    250.6
+Time after iteration  14 :    251.7
+Time before starting iteration:    252.1
+Time after iteration   1 :    253.2
+Time after iteration   2 :    254.4
+Time after iteration   3 :    255.6
+Time after iteration   4 :    256.7
+Time after iteration   5 :    257.8
+Time after iteration   6 :    258.9
+Time after iteration   7 :    260.0
+Time after iteration   8 :    261.3
+Time after iteration   9 :    262.4
+Time after iteration  10 :    263.6
+Time after iteration  11 :    264.8
+Time after iteration  12 :    265.9
+Time before starting iteration:    266.3
+Time after iteration   1 :    267.4
+Time after iteration   2 :    268.6
+Time after iteration   3 :    270.0
+Time after iteration   4 :    271.3
+Time after iteration   5 :    272.5
+Time after iteration   6 :    273.9
+Time after iteration   7 :    275.1
+Time after iteration   8 :    276.2
+Time after iteration   9 :    277.4
+Time after iteration  10 :    278.8
+Time after iteration  11 :    280.0
+Time after iteration  12 :    281.0
+Time after iteration  13 :    282.1
+Time before starting iteration:    282.5
+Time after iteration   1 :    283.5
+Time after iteration   2 :    284.6
+Time after iteration   3 :    285.6
+Time after iteration   4 :    286.6
+Time after iteration   5 :    287.6
+Time after iteration   6 :    288.7
+Time after iteration   7 :    289.7
+Time after iteration   8 :    290.7
+Time after iteration   9 :    291.8
+Time after iteration  10 :    292.8
+Time after iteration  11 :    293.8
+Time after iteration  12 :    294.9
+Time after finishing step   3 :   295.7
+Time before starting redshift evolution step   4 :   295.7
+Time after setting sources for step   4 :   295.8
+Time after setting material properties for step   4 :   295.8
+Time before starting iteration:    295.8
+Time after iteration   1 :    296.8
+Time after iteration   2 :    297.9
+Time after iteration   3 :    299.0
+Time after iteration   4 :    300.0
+Time after iteration   5 :    301.0
+Time after iteration   6 :    302.0
+Time after iteration   7 :    303.1
+Time after iteration   8 :    304.1
+Time after iteration   9 :    305.1
+Time after iteration  10 :    306.1
+Time after iteration  11 :    307.2
+Time before starting iteration:    307.6
+Time after iteration   1 :    308.6
+Time after iteration   2 :    309.6
+Time after iteration   3 :    310.6
+Time after iteration   4 :    311.7
+Time after iteration   5 :    312.7
+Time after iteration   6 :    313.7
+Time after iteration   7 :    314.8
+Time after iteration   8 :    315.8
+Time after iteration   9 :    316.8
+Time after iteration  10 :    317.8
+Time before starting iteration:    318.2
+Time after iteration   1 :    319.3
+Time after iteration   2 :    320.3
+Time after iteration   3 :    321.3
+Time after iteration   4 :    322.3
+Time after iteration   5 :    323.4
+Time after iteration   6 :    324.4
+Time after iteration   7 :    325.4
+Time after iteration   8 :    326.4
+Time after iteration   9 :    327.4
+Time after iteration  10 :    328.5
+Time after iteration  11 :    329.5
+Time before starting iteration:    329.9
+Time after iteration   1 :    330.9
+Time after iteration   2 :    331.9
+Time after iteration   3 :    333.0
+Time after iteration   4 :    334.0
+Time after iteration   5 :    335.0
+Time after iteration   6 :    336.1
+Time after iteration   7 :    337.1
+Time after iteration   8 :    338.1
+Time after iteration   9 :    339.2
+Time after iteration  10 :    340.2
+Time after finishing step   4 :   341.1
+Time at end of simulation:    341.1

@@ -171,6 +171,8 @@ contains
     integer(kind=8) :: wallclock2
     integer(kind=8) :: countspersec
 
+    integer :: exit_status, exit_status_sum
+
     ! Flag variable (passed back from evolve0D_global)
     integer :: conv_flag
 
@@ -182,6 +184,8 @@ contains
 #endif
 
     ! End of declarations
+
+    exit_status = 0
 
     ! Initialize wall clock counter (for dumps)
     call system_clock(wallclock1)
@@ -205,7 +209,7 @@ contains
     else
        ! Reload xh_av,xh_intermed,photon_loss,niter
        call start_from_dump(restart,niter)
-       call global_pass (conv_flag,dt)
+       call global_pass(conv_flag,dt)
     endif
 
     ! Set the conv_criterion, if there are few sources we should make
@@ -219,6 +223,7 @@ contains
 
     ! Iterate to reach convergence for multiple sources
     do
+
        ! Update xh if converged and exit
        ! Update xh if converged and exit
        ! This should be < and NOT <= for the case of few sources:
@@ -246,28 +251,39 @@ contains
           !call set_final_temperature_point
 
           ! Report
-          if (rank == control_rank) then
+          !WW if (rank == control_rank) then
              write(logf,*) "Multiple sources convergence reached"
              write(logf,*) "Test 1 values: ",conv_flag, conv_criterion
              write(logf,*) "Test 2 values: ",rel_change_sum_xh, &
                   convergence_fraction
-          endif
-          exit
+          !WW endif
+#ifdef MPI
+	  exit_status = 1
+#else
+	  exit
+#endif
        else
           if (niter > 100) then
              ! Complain about slow convergence
-             if (rank == control_rank) write(logf,*) 'Multiple sources not converging'
-             exit
+             ! WW if (rank == control_rank) write(logf,*) 'Multiple sources not converging'
+             write(logf,*) 'Multiple sources not converging'
+	     exit
           endif
        endif
-       
+
+#ifdef MPI
+          call MPI_ALLREDUCE(exit_status, exit_status_sum, 1, &
+            MPI_INTEGER, MPI_SUM, MPI_COMM_NEW, mympierror)
+	  if(exit_status_sum .eq. npr)  exit
+#endif
+
        ! Save current value of mean ionization fraction
        prev_sum_xh_int=sum_xh_int
 
        ! Iteration loop counter
        niter=niter+1
 
-       call pass_all_sources (niter,dt)
+       call pass_all_sources(niter,dt)
 
        ! Report subbox statistics
        if (rank == control_rank) &
@@ -289,7 +305,7 @@ contains
           endif
        endif
 
-       call global_pass (conv_flag,dt)
+       call global_pass(conv_flag,dt)
 
        ! Write intermediate result to file (for convergence checking)
        !call output_intermediate(time2zred(time+dt),niter)
@@ -300,9 +316,9 @@ contains
     enddo
 
     ! Calculate photon statistics
-    call calculate_photon_statistics (dt,xh,xh_av)
-    call report_photonstatistics (dt)
-    call update_grandtotal_photonstatistics (dt)
+    call calculate_photon_statistics(dt,xh,xh_av)
+    call report_photonstatistics(dt)
+    call update_grandtotal_photonstatistics(dt)
 
   end subroutine evolve3D
 
@@ -410,6 +426,9 @@ contains
        
 #ifdef MPI       
        ! Distribute the input parameters to the other nodes
+       !TODO: will need to alter this so the new version can
+       !handle starts from dumps.
+
        call MPI_BCAST(niter,1, &
             MPI_INTEGER,control_rank,MPI_COMM_NEW,mympierror)
        call MPI_BCAST(photon_loss_all,NumFreqBnd, &
@@ -494,26 +513,40 @@ contains
     !! edited do_grid_static so nodes now only
     !! process sources in their domains... 
 
+
        call do_grid_static(dt,niter)
 
+
+
 #ifdef MPI
+
+    ! WW: OK. These need to change as the parallelism is totally 
+    ! different now...   
+       
     ! accumulate (sum) the MPI distributed photon losses
-    call MPI_ALLREDUCE(photon_loss, photon_loss_all, NumFreqBnd, &
-         MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_NEW, mympierror)
+!WW    call MPI_ALLREDUCE(photon_loss, photon_loss_all, NumFreqBnd, &
+!WW         MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_NEW, mympierror)
+
+    photon_loss_all(:) = photon_loss(:) 
 
     ! accumulate (sum) the MPI distributed photon losses
     if (use_LLS)then
-       call MPI_ALLREDUCE(LLS_loss, LLS_loss_all, 1, &
-            MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_NEW, mympierror)
+!WW       call MPI_ALLREDUCE(LLS_loss, LLS_loss_all, 1, &
+!WW            MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_NEW, mympierror)
        ! Put LLS_loss_all back in the LLS variable
-       LLS_loss = LLS_loss_all
+!WW       LLS_loss = LLS_loss_all
+
+       LLS_loss_all = LLS_loss
+
     endif
 
     ! accumulate (sum) the MPI distributed phih_grid
-    call MPI_ALLREDUCE(phih_grid, buffer, mesh(1)*mesh(2)*mesh(3), &
-         MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_NEW, mympierror)
-    ! Overwrite the processor local values with the accumulated value
-    phih_grid(:,:,:)=buffer(:,:,:)
+!WW    call MPI_ALLREDUCE(phih_grid, buffer, mesh(1)*mesh(2)*mesh(3), &
+!WW         MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_NEW, mympierror)
+! Overwrite the processor local values with the accumulated value
+!WW    phih_grid(:,:,:)=buffer(:,:,:)
+
+
 
     !call MPI_ALLREDUCE(phiheat, buffer, mesh(1)*mesh(2)*mesh(3), &
     !     MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_NEW, mympierror)
@@ -521,8 +554,10 @@ contains
     !phiheat(:,:,:)=buffer(:,:,:)    
 
     ! accumulate (sum) the MPI distributed sum of number of boxes
-    call MPI_ALLREDUCE(sum_nbox, sum_nbox_all, 1, &
-         MPI_INTEGER, MPI_SUM, MPI_COMM_NEW, mympierror)
+!    call MPI_ALLREDUCE(sum_nbox, sum_nbox_all, 1, &
+!         MPI_INTEGER, MPI_SUM, MPI_COMM_NEW, mympierror)
+
+    sum_nbox_all = sum_nbox
 
     ! Only if the do_chemistry routine was called with local option
     ! where the ionization fractions changed during the pass over
@@ -530,36 +565,36 @@ contains
     if (local_chemistry) then
 #ifdef ALLFRAC
        ! accumulate (max) MPI distributed xh_av
-       call MPI_ALLREDUCE(xh_av(:,:,:,1), buffer, mesh(1)*mesh(2)*mesh(3), &
-            MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_NEW, mympierror)
+!WW       call MPI_ALLREDUCE(xh_av(:,:,:,1), buffer, mesh(1)*mesh(2)*mesh(3), &
+!WW            MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_NEW, mympierror)
        
        ! Overwrite the processor local values with the accumulated value
-       xh_av(:,:,:,1) = buffer(:,:,:)
+!WW       xh_av(:,:,:,1) = buffer(:,:,:)
        xh_av(:,:,:,0) = max(0.0_dp,min(1.0_dp,1.0-xh_av(:,:,:,1)))
        
        ! accumulate (max) MPI distributed xh_intermed
-       call MPI_ALLREDUCE(xh_intermed(:,:,:,1), buffer, &
-            mesh(1)*mesh(2)*mesh(3), MPI_DOUBLE_PRECISION, MPI_MAX, &
-            MPI_COMM_NEW, mympierror)
+!WW       call MPI_ALLREDUCE(xh_intermed(:,:,:,1), buffer, &
+!WW            mesh(1)*mesh(2)*mesh(3), MPI_DOUBLE_PRECISION, MPI_MAX, &
+!WW            MPI_COMM_NEW, mympierror)
        
        ! Overwrite the processor local values with the accumulated value
-       xh_intermed(:,:,:,1)=buffer(:,:,:)
+!WW       xh_intermed(:,:,:,1)=buffer(:,:,:)
        xh_intermed(:,:,:,0)=max(0.0_dp,min(1.0_dp,1.0-xh_intermed(:,:,:,1)))
 #else
        ! accumulate (max) MPI distributed xh_av
-       call MPI_ALLREDUCE(xh_av(:,:,:), buffer, mesh(1)*mesh(2)*mesh(3), &
-            MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_NEW, mympierror)
+!WW       call MPI_ALLREDUCE(xh_av(:,:,:), buffer, mesh(1)*mesh(2)*mesh(3), &
+!WW            MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_NEW, mympierror)
        
        ! Overwrite the processor local values with the accumulated value
-       xh_av(:,:,:) = buffer(:,:,:)
+!WW       xh_av(:,:,:) = buffer(:,:,:)
        
        ! accumulate (max) MPI distributed xh_intermed
-       call MPI_ALLREDUCE(xh_intermed(:,:,:), buffer, &
-            mesh(1)*mesh(2)*mesh(3), MPI_DOUBLE_PRECISION, MPI_MAX, &
-            MPI_COMM_NEW, mympierror)
+!WW       call MPI_ALLREDUCE(xh_intermed(:,:,:), buffer, &
+!WW            mesh(1)*mesh(2)*mesh(3), MPI_DOUBLE_PRECISION, MPI_MAX, &
+!WW            MPI_COMM_NEW, mympierror)
        
        ! Overwrite the processor local values with the accumulated value
-       xh_intermed(:,:,:)=buffer(:,:,:)
+!WW       xh_intermed(:,:,:)=buffer(:,:,:)
 #endif
     endif
 #else
@@ -568,7 +603,9 @@ contains
 #endif
 
 #ifdef MPI
+    
     call MPI_BARRIER(MPI_COMM_NEW,mympierror)
+
 #endif
     
   end subroutine pass_all_sources
@@ -985,9 +1022,7 @@ contains
        last_l(:)=max(srcpos(:,ns)-subboxsize*nbox,lastpos_l(:))
 
        !> WW: I have stripped the original OpenMP loop out from evolve8.F90 
-       !! A new OpenMP (and MPI) implementation is in progress. In this
-       !! version of the code MPI is as it originally was and there is
-       !! no OpenMP implemented.
+       !! A new OpenMP (and MPI) implementation is in progress. 
 
        ! No OpenMP parallelization
 

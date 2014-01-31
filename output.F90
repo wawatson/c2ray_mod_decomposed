@@ -65,7 +65,7 @@ contains
     use photonstatistics, only: do_photonstatistics, &
          initialize_photonstatistics
 
-    if (rank == control_Rank) then
+    if (rank == control_rank) then
        if (.not.file_input) then
           write(*,*) "Which output streams do you want?"
           write(*,*) "Enter a mask for streams 1 through 5"
@@ -256,7 +256,8 @@ contains
           open(unit=54,file=file1,form="unformatted",status="unknown")
           open(unit=55,file=file2,form="unformatted",status="unknown")
           open(unit=56,file=file3,form="unformatted",status="unknown")
-          ! xy cut through source 
+	  print*,'WRITING OUTPUT IFRONTS ON RANK ',control_rank
+	  ! xy cut through source 
           write(54) mesh(1),mesh(2)
 #ifdef ALLFRAC
           write(54) ((real(xh(i,j,mesh(3)/2,1)),i=1,mesh(1)), &

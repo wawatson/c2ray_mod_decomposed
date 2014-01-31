@@ -104,7 +104,8 @@ Program C2Ray
 
   ! Set up input stream(either standard input or from file given
   ! by first argument)
-  if(rank == control_Rank) then
+  if(rank == control_rank) then
+     print*,"CONTROL RANK = ",control_rank
      write(logf,*) "input or input?"
      flush(logf)
      if(COMMAND_ARGUMENT_COUNT() > 0) then
@@ -126,7 +127,7 @@ Program C2Ray
   call grid_ini()
 
 
-  if(rank == control_Rank) &
+  if(rank == control_rank) &
        write(timefile,"(A,F8.1)") "Time after grid_ini: ",timestamp_wallclock()
 
 #ifdef MPILOG
@@ -135,7 +136,7 @@ Program C2Ray
   ! Initialize photo-ionization calculation
   call rad_ini()
 
-  if(rank == control_Rank) &
+  if(rank == control_rank) &
        write(timefile,"(A,F8.1)") "Time after rad_ini: ",timestamp_wallclock()
 
 #ifdef MPILOG
@@ -144,7 +145,7 @@ Program C2Ray
   ! Initialize the material properties
   call mat_ini(restart, nz0, ierror)
 
-  if(rank == control_Rank) &
+  if(rank == control_rank) &
        write(timefile,"(A,F8.1)") "Time after mat_ini: ",timestamp_wallclock()
 
 #ifdef MPILOG
@@ -164,7 +165,7 @@ Program C2Ray
 #endif
   ! Initialize time step parameters
   call time_ini()
-  if(rank == control_Rank) flush(logf)
+  if(rank == control_rank) flush(logf)
 
 #ifdef MPILOG
   write(logf,*) "Before evolve_ini"
@@ -181,13 +182,13 @@ Program C2Ray
   call cosmology_init(zred_array(nz0),sim_time)
 
 
-  if(rank == control_Rank) &
+  if(rank == control_rank) &
        write(timefile,"(A,F8.1)") "Time after cosmology_init: ", &
        timestamp_wallclock()
 
   ! If a restart, inquire whether to restart from iteration
   if(restart /= 0) then
-     if(rank == control_Rank) then
+     if(rank == control_rank) then
         if(.not.file_input) &
              write(*,"(A,$)") "Restart from iteration dump(y/n) or(0/1/2)? : "
         read(stdinput,*) answer
@@ -219,7 +220,7 @@ Program C2Ray
      if(.not.isothermal) call temper_ini(zred_array(nz0))
   endif
   if(restart == 2) then
-     if(rank == control_Rank) then
+     if(rank == control_rank) then
         if(.not.file_input) &
              write(*,"(A,$)") "At which redshift to restart x_frac?: "
         read(stdinput,*) zred_interm
@@ -235,20 +236,20 @@ Program C2Ray
   ! Loop over redshifts
   do nz=nz0,NumZred-1
 
-     if(rank == control_Rank) write(timefile,"(A,I3,A,F8.1)") &
+     if(rank == control_rank) write(timefile,"(A,I3,A,F8.1)") &
           "Time before starting redshift evolution step ",nz," :", &
           timestamp_wallclock()
 
      zred=zred_array(nz)
-     if(rank == control_Rank) write(logf,*) "Doing redshift: ",zred," to ", &
+     if(rank == control_rank) write(logf,*) "Doing redshift: ",zred," to ", &
           zred_array(nz+1),'of total', NumZred
 
      ! Initialize time parameters
      call set_timesteps(zred,zred_array(nz+1), &
           end_time,dt,output_time)
-     if(rank == control_Rank) write(logf,*) &
+     if(rank == control_rank) write(logf,*) &
           "This is time ",sim_time/YEAR," to ",end_time/YEAR
-     if(rank == control_Rank .and. nbody_type == "LG") &
+     if(rank == control_rank .and. nbody_type == "LG") &
           write(logf,*) "This is snapshot ", snap(nz)
 
      ! Initialize source position
@@ -258,7 +259,7 @@ Program C2Ray
      call source_properties(zred,nz,end_time-sim_time,restart)
 
 
-     if(rank == control_Rank) write(timefile,"(A,I3,A,F8.1)") &
+     if(rank == control_rank) write(timefile,"(A,I3,A,F8.1)") &
           "Time after setting sources for step ",nz," :", &
           timestamp_wallclock()
 
@@ -269,7 +270,7 @@ Program C2Ray
      if(type_of_clumping == 5) call set_clumping(zred)
      if(use_LLS .and. type_of_LLS == 2) call set_LLS(zred)
 
-     if(rank == control_Rank) write(timefile,"(A,I3,A,F8.1)") &
+     if(rank == control_rank) write(timefile,"(A,I3,A,F8.1)") &
           "Time after setting material properties for step ",nz," :", &
           timestamp_wallclock()
 
@@ -300,17 +301,17 @@ Program C2Ray
 #ifdef MPILOG     
      write(logf,*) 'Start of loop'
 #endif 
-     if(rank == control_Rank) flush(logf)
+     if(rank == control_rank) flush(logf)
      ! Loop until end time is reached
      do
         ! Report memory usage
-        if(rank == control_Rank) call report_memory(logf)
+        if(rank == control_rank) call report_memory(logf)
 
         ! Make sure you produce output at the correct time
         actual_dt=min(next_output_time-sim_time,dt)
 
         ! Report time and time step
-      if(rank == control_Rank) write(logf,"(A,2(es10.3,x),A)") "Time, dt:", &
+      if(rank == control_rank) write(logf,"(A,2(es10.3,x),A)") "Time, dt:", &
              sim_time/YEAR,actual_dt/YEAR,"(years)"
 
         ! For cosmological simulations evolve proper quantities
@@ -340,7 +341,7 @@ Program C2Ray
                 photcons_flag)
            next_output_time=next_output_time+output_time
            if(photcons_flag /= 0 .and. stop_on_photon_violation) then
-              if(rank == control_Rank) write(logf,*) &
+              if(rank == control_rank) write(logf,*) &
                 "Exiting because of photon conservation violation"
            ! GM(110131): Forgot to check here whether we care about photon
            ! conservations violations; if the code jumps out of the evolution
@@ -350,15 +351,15 @@ Program C2Ray
         endif
         ! end time for this redshift interval reached
         if(abs(sim_time-end_time) <= 1e-6*end_time) exit
-        if(rank == control_Rank) flush(logf)
+        if(rank == control_rank) flush(logf)
      enddo
 
-     if(rank == control_Rank) write(timefile,"(A,I3,A,F8.1)") &
+     if(rank == control_rank) write(timefile,"(A,I3,A,F8.1)") &
           "Time after finishing step ",nz," :", &
           timestamp_wallclock()
 
      ! Get out: photon conservation violated
-     if(stop_on_photon_violation .and. photcons_flag /= 0 .and. rank == control_Rank) &
+     if(stop_on_photon_violation .and. photcons_flag /= 0 .and. rank == control_rank) &
           write(logf,*) "Exiting because of photon conservation violation"
      if(stop_on_photon_violation .and. photcons_flag /= 0) exit ! photon conservation violated
 
@@ -384,7 +385,7 @@ Program C2Ray
   ! End output streams
   call close_down()
   
-  if(rank == control_Rank) write(timefile,"(A,F8.1)") &
+  if(rank == control_rank) write(timefile,"(A,F8.1)") &
        "Time at end of simulation: ", timestamp_wallclock()
 
   ! Report clocks(cpu and wall)

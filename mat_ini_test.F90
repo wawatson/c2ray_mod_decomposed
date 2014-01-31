@@ -118,7 +118,7 @@ contains
        ! restart
        restart=0 ! no restart by default
 
-       if (rank == control_Rank) then
+       if (rank == control_rank) then
           ! Ask for temperature, restart. Read in values
           if (.not.file_input) &
                write(*,"(A,$)") "Enter initial temperature (K): "
@@ -161,7 +161,7 @@ contains
           temperature_grid(:,:,:)=temper_val
        endif
        ! Report on temperature situation
-       if (rank == control_Rank) then
+       if (rank == control_rank) then
           if (isothermal) then
              write(logf,"(A)") "Thermal conditions: isothermal"
           else
@@ -230,7 +230,7 @@ contains
     enddo
     
     ! Report density field properties
-    if (rank == control_Rank) then
+    if (rank == control_rank) then
        write(logf,*) "Raw density diagnostics (cm^-3)"
        write(logf,"(A,1pe10.3,A)") "Average density = ",avg_dens," cm^-3"
        write(logf,"(A,1pe10.3,A)") "(at z=0 : ", &
@@ -261,7 +261,7 @@ contains
     real(kind=dp),dimension(:,:,:),allocatable :: xh1_real
     !real(kind=si),dimension(:,:,:),allocatable :: xh1_real
 
-    if (rank == control_Rank) then
+    if (rank == control_rank) then
        allocate(xh1_real(mesh(1),mesh(2),mesh(3)))
        write(zred_str,"(f6.3)") zred_now
 !       xfrac_file= "./xfrac3d_"//trim(adjustl(zred_str))//".bin"
@@ -298,10 +298,10 @@ contains
 #ifdef MPI       
     ! Distribute the input parameters to the other nodes
 #ifdef ALLFRAC
-    call MPI_BCAST(xh,mesh(1)*mesh(2)*mesh(3)*2,MPI_DOUBLE_PRECISION,control_Rank,&
+    call MPI_BCAST(xh,mesh(1)*mesh(2)*mesh(3)*2,MPI_DOUBLE_PRECISION,control_rank,&
          MPI_COMM_NEW,mympierror)
 #else
-    call MPI_BCAST(xh,mesh(1)*mesh(2)*mesh(3),MPI_DOUBLE_PRECISION,control_Rank,&
+    call MPI_BCAST(xh,mesh(1)*mesh(2)*mesh(3),MPI_DOUBLE_PRECISION,control_rank,&
          MPI_COMM_NEW,mympierror)
 #endif
 #endif
@@ -327,10 +327,10 @@ contains
     integer :: m1,m2,m3
 
     if (isothermal) then
-       if (rank == control_Rank) write(logf,"(A)") &
+       if (rank == control_rank) write(logf,"(A)") &
             "Incorrect call to temper_ini in isothermal case"
     else
-       if (rank == control_Rank) then
+       if (rank == control_rank) then
           write(zred_str,"(f6.3)") zred_now
           temper_file= trim(adjustl(results_dir))// &
                "temper3d_"//trim(adjustl(zred_str))//".bin"
@@ -355,7 +355,7 @@ contains
        
 #ifdef MPI       
        ! Distribute the input parameters to the other nodes
-       call MPI_BCAST(temperature_grid,mesh(1)*mesh(2)*mesh(3),MPI_REAL,control_Rank,&
+       call MPI_BCAST(temperature_grid,mesh(1)*mesh(2)*mesh(3),MPI_REAL,control_rank,&
             MPI_COMM_NEW,mympierror)
 #endif
     endif
@@ -411,7 +411,7 @@ contains
        call clumping_init (z)
     end select
 
-    if (rank == control_Rank) write(logf,*) "Setting (mean) global clumping factor to ", &
+    if (rank == control_rank) write(logf,*) "Setting (mean) global clumping factor to ", &
          clumping,"(type ", type_of_clumping,")"
     
   end subroutine set_clumping
@@ -531,7 +531,7 @@ contains
        call read_lls_grid (z)
     end select
 
-    if (rank == control_Rank) then
+    if (rank == control_rank) then
        write(logf,*) "Average optical depth per cell due to LLSs: ", &
             coldensh_LLS*sigh,"(type ", type_of_LLS,")"
        write(logf,*) "Mean free path (pMpc): ", mfp_LLS_pMpc
