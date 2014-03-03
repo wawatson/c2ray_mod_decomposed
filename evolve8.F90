@@ -388,7 +388,7 @@ contains
 
           ! Report time
           write(timefile,"(A,F8.1)") &
-               "Time before reading iterdump: ", timestamp_wallclock ()
+               "Time before reading iterdump: ", timestamp_wallclock()
 
           ! Set file to read (depending on restart flag)
           select case (restart)
@@ -983,14 +983,33 @@ contains
     ! cell to the right. If it is odd, it is mesh/2 in either direction.
     ! The mod(mesh,2) takes care of handling this.
 
+    ! WW: Except now none of this is true. We now want to only trace until the
+    ! end of the sub volumes we are decomposing into (in the first instance - we
+    ! then want to trace the sources from the adjacent subvolumes across the
+    ! subvolumes too...).
+
     ! WW: deprecated this
-    !    if (periodic_bc) then
-!       lastpos_r(:)=srcpos(:,ns)+min(max_subbox,mesh(:)/2-1+mod(mesh(:),2))
-!       lastpos_l(:)=srcpos(:,ns)-min(max_subbox,mesh(:)/2)
-!    else
-       lastpos_r(:)=min(srcpos(:,ns)+max_subbox,mesh(:))
-       lastpos_l(:)=max(srcpos(:,ns)-max_subbox,1)
-!    endif
+    !WW    if (periodic_bc) then
+!WW       lastpos_r(:)=srcpos(:,ns)+min(max_subbox,mesh(:)/2-1+mod(mesh(:),2))
+!WW       lastpos_l(:)=srcpos(:,ns)-min(max_subbox,mesh(:)/2)
+!WW    else
+!WW       lastpos_r(:)=min(srcpos(:,ns)+max_subbox,mesh(:))
+!WW       lastpos_l(:)=max(srcpos(:,ns)-max_subbox,1)
+!WW    endif
+
+! WW: THERE IS AN ISSUE WITH THE HANDEDNESS OF THE DOMAIN DECOMP...
+
+lastpos_r(3) = (1+grid_struct(1))*mesh(1)
+lastpos_r(2) = (1+grid_struct(2))*mesh(2)
+lastpos_r(1) = (1+grid_struct(3))*mesh(3)
+lastpos_l(3) = (grid_struct(1))*mesh(1)
+lastpos_l(2) = (grid_struct(2))*mesh(2)
+lastpos_l(1) = (grid_struct(3))*mesh(3)
+
+
+! TODO NEED TO SORT OUT THE LIMITS OF THE LOOP HERE. ALSO, WHAT
+! ABOUT BOXSIZE AND LENGTH UNITS?! AND PERIODICITY?
+
 
     ! Loop through grid in the order required by 
     ! short characteristics
@@ -1007,6 +1026,9 @@ contains
     photon_loss_src(:)=total_source_flux !-1.0 ! to pass the first while test
     last_r(:)=srcpos(:,ns) ! to pass the first while test
     last_l(:)=srcpos(:,ns) ! to pass the first while test
+
+!    if(rank.eq.1) print*,last_r(:),lastpos_r(:)
+
 
     ! Loop through boxes of increasing size
     ! NOTE: make this limit on the photon_loss a fraction of

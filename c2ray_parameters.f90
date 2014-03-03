@@ -20,7 +20,7 @@ module c2ray_parameters
 
   !> Which rank controls IO? (WW)
 #ifdef MPI
-  integer,parameter :: control_rank = 1
+  integer,parameter :: control_rank = 3
 #else
   integer,parameter :: control_rank = 0
 #endif

@@ -347,7 +347,6 @@ contains
 	  &nodes_dim*int(pos_y/c_per_n_per_d)+&
 	  &(nodes_dim**2.0)*(nodes_dim-1)
 
-
     elseif(int(pos_x/c_per_n_per_d).ge.nodes_dim.and.&
 	  & int(pos_y/c_per_n_per_d).ge.nodes_dim.and.&
 	  & int(pos_z/c_per_n_per_d).lt.nodes_dim) then
