@@ -18,20 +18,19 @@ module output_module
 
   implicit none
   
-  private
-
-
-  integer,parameter :: max_input_streams=5 !< maximum number of input streams
-  integer,dimension(max_input_streams) :: streams !< flag array for input streams
-
   public :: setup_output, output, close_down
+
+  integer, public :: mympierror,dummy
+  integer,parameter,public :: max_input_streams=5 !< maximum number of input streams
+  integer,public,dimension(max_input_streams) :: streams !< flag array for input streams
+
 
 contains
   !----------------------------------------------------------------------------
 
   !> Initializes output streams
   subroutine setup_output()
-    
+
     ! Sets up output stream
     
     ! Version: Five streams
@@ -64,6 +63,9 @@ contains
     ! photon statistics
     use photonstatistics, only: do_photonstatistics, &
          initialize_photonstatistics
+
+    integer :: mympierror
+     
 
     if (rank == control_rank) then
        if (.not.file_input) then
@@ -99,11 +101,16 @@ contains
 #endif
     endif
     if (do_photonstatistics) then
-       call initialize_photonstatistics ()
+       call initialize_photonstatistics()
     endif
 
 #ifdef MPILOG
     write(logf,*) "End of setup output"
+#endif
+
+    !WW broadcast streams to all ranks...
+#ifdef MPI
+    call MPI_BCAST(streams(:),5,MPI_INTEGER,control_rank,MPI_COMM_NEW,mympierror)
 #endif
 
   end subroutine setup_output
@@ -157,7 +164,7 @@ contains
     integer,intent(out) :: photcons_flag
 
     integer :: i,j,k,ns
-    character(len=6) :: zred_str
+    character(len=6) :: zred_str, rank_string
     character(len=40) :: file1,file2,file3,file4,file5,file6
     real(kind=dp) :: totalsrc,photcons,total_photon_loss,total_LLS_loss
     real(kind=dp) :: totions,totphots,volfrac,massfrac
@@ -172,6 +179,9 @@ contains
     photcons_flag=0
 
 
+    write(rank_string,"(i5.5)") rank
+
+
     if(do_photonstatistics)then
 
       ! gather fluxes across all tasks
@@ -183,16 +193,24 @@ contains
 
     endif
 
-    ! Only produce output on rank 0
-    if (rank == control_Rank) then
+
+    !WW Now producing output on all ranks... 
+!    if (rank == control_Rank) then
+
+
+
+call MPI_BARRIER(MPI_COMM_NEW,mympierror)
+
 
        ! Stream 1
        if (streams(1) == 1) then
           write(file1,"(f6.3)") zred_now
           file1=trim(adjustl(results_dir))// &
-               "Ifront1_"//trim(adjustl(file1))//".dat"
+               "Ifront1_"//trim(adjustl(file1))//"_"//&
+	       &rank_string(1:len_trim(rank_string))//".dat"
           open(unit=51,file=file1,form="formatted",status="unknown")
- 	  do i=1,mesh(1)
+	  if(size(srcpos) .gt. 0) then
+	  do i=1,mesh(1)
              write(51,"(5(1pe10.3,1x))") x(i), &
 #ifdef ALLFRAC
                   xh(i,srcpos(2,1),srcpos(3,1),0), &
@@ -204,14 +222,18 @@ contains
                   temper, &
                   ndens(i,srcpos(2,1),srcpos(3,1))
           enddo
+	  else
+	  write(51,*) "NO SOURCES ON THIS RANK (rank = ",rank,")"
+	  endif
           close(51)
        endif
-      
+
        ! Stream 2
        if (streams(2) == 1) then
           write(file1,"(f6.3)") zred_now
-          file1=trim(adjustl(results_dir))// &
-               "xfrac3d_"//trim(adjustl(file1))//".bin"
+          file1=trim(adjustl(results_dir))//&
+               "xfrac3d_"//trim(adjustl(file1))//"_"//&
+	       &rank_string(1:len_trim(rank_string))//".bin"
           open(unit=52,file=file1,form="unformatted",status="unknown")
           write(52) mesh(1),mesh(2),mesh(3)
 #ifdef ALLFRAC
@@ -221,13 +243,14 @@ contains
 #endif
           close(52)
        endif
-       
+  
        ! Stream 3
        if (streams(3) == 1) then
 
           write(file1,"(f6.3)") zred_now
           file1=trim(adjustl(results_dir))// &
-               "IonRates3_"//trim(adjustl(file1))//".bin"
+               "IonRates3_"//trim(adjustl(file1))//"_"//&
+	       &rank_string(1:len_trim(rank_string))//".bin"
           open(unit=53,file=file1,form="unformatted",status="unknown")
           write(53) mesh(1),mesh(2),mesh(3)
           write(53) (((real(phih_grid(i,j,k)),i=1,mesh(1)),j=1,mesh(2)), &
@@ -235,7 +258,8 @@ contains
           close(53)
  
           if (.not.isothermal) then
-             file1="Temper3d_"//trim(adjustl(file1))//".bin"
+             file1="Temper3d_"//trim(adjustl(file1))//"_"//&
+ 	       &rank_string(1:len_trim(rank_string))//".bin"
              open(unit=53,file=file1,form="unformatted",status="unknown")
              write(53) mesh(1),mesh(2),mesh(3)
              write(53) (((real(temper),i=1,mesh(1)),j=1,mesh(2)), &
@@ -243,20 +267,22 @@ contains
              close(53)
           endif
        endif
-       
+ 
        ! Stream 4
        if (streams(4) == 1) then
           write(zred_str,"(f6.3)") zred_now
-          file1=trim(adjustl(results_dir))// &
-               "Ifront2_xy_"//trim(adjustl(zred_str))//".bin"
-          file2=trim(adjustl(results_dir))// &
-               "Ifront2_xz_"//trim(adjustl(zred_str))//".bin"
-          file3=trim(adjustl(results_dir))// &
-               "Ifront2_yz_"//trim(adjustl(zred_str))//".bin"
+          file1=trim(adjustl(results_dir))//&
+               "Ifront2_xy_"//trim(adjustl(zred_str))//"_"//&
+	       &rank_string(1:len_trim(rank_string))//".bin"
+          file2=trim(adjustl(results_dir))//&
+               "Ifront2_xz_"//trim(adjustl(zred_str))//"_"//&
+	       &rank_string(1:len_trim(rank_string))//".bin"
+          file3=trim(adjustl(results_dir))//&
+               "Ifront2_yz_"//trim(adjustl(zred_str))//"_"//&
+	       &rank_string(1:len_trim(rank_string))//".bin"
           open(unit=54,file=file1,form="unformatted",status="unknown")
           open(unit=55,file=file2,form="unformatted",status="unknown")
           open(unit=56,file=file3,form="unformatted",status="unknown")
-	  print*,'WRITING OUTPUT IFRONTS ON RANK ',control_rank
 	  ! xy cut through source 
           write(54) mesh(1),mesh(2)
 #ifdef ALLFRAC
@@ -285,16 +311,19 @@ contains
           close(55)
           close(56)
        endif
-       
+
        ! Stream 5
        if (streams(5) == 1) then
           write(zred_str,"(f6.3)") zred_now
           file4=trim(adjustl(results_dir))// &
-               "ndens_xy_"//trim(adjustl(zred_str))//".bin"
+               "ndens_xy_"//trim(adjustl(zred_str))//"_"//&
+      	       &rank_string(1:len_trim(rank_string))//".bin"
           file5=trim(adjustl(results_dir))// &
-               "ndens_xz_"//trim(adjustl(zred_str))//".bin"
-          file6=trim(adjustl(results_dir))// &
-               "ndens_yz_"//trim(adjustl(zred_str))//".bin"
+               "ndens_xz_"//trim(adjustl(zred_str))//"_"//&
+	       &rank_string(1:len_trim(rank_string))//".bin"
+          file6=trim(adjustl(results_dir))//&
+               "ndens_yz_"//trim(adjustl(zred_str))//"_"//&
+	       &rank_string(1:len_trim(rank_string))//".bin"
           open(unit=57,file=file4,form="unformatted",status="unknown")
           open(unit=58,file=file5,form="unformatted",status="unknown")
           open(unit=59,file=file6,form="unformatted",status="unknown")
@@ -314,10 +343,11 @@ contains
           close(58)
           close(59)
        endif
- 
+
        ! Check if we are tracking photon conservation
-       if (do_photonstatistics) then
-          ! Photon Statistics
+!WW       if (do_photonstatistics) then
+       if (do_photonstatistics .and. rank .eq. 0) then
+	  ! Photon Statistics
           ! total_ion is the total number of new ionization, plus
           ! the total number of recombinations, and here is also
           ! added the number of photons lost from the grid. Since
@@ -375,7 +405,7 @@ contains
              endif
           endif
        endif
-    endif
+!    endif
     
 #ifdef MPI
      call MPI_BCAST(photcons_flag,1,MPI_INTEGER,control_rank,MPI_COMM_NEW,mympierror)
