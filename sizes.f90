@@ -27,7 +27,7 @@ module sizes
 
 
   !for test problem
-  integer,dimension(Ndim),parameter,public :: mesh=(/ 100, 100, 100 /)
+  integer,dimension(Ndim),parameter,public :: mesh=(/ 100, 100, 100 /) !> WW: NOTE MESH IS NOW THE LOCAL MESH ON EACH NODE. 
 
   !for 5488^3 particles, 10976^3 grid, 425/h Mpc box
   !integer,dimension(Ndim),parameter,public :: mesh=(/ 252, 252, 252 /)

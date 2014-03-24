@@ -215,13 +215,17 @@ contains
     ! Set the conv_criterion, if there are few sources we should make
     ! sure that things are converged around these sources.
     conv_criterion=min(int(convergence_fraction*mesh(1)*mesh(2)*mesh(3)), &
-         (NumSrc_Glob-1)/3) ! WW: should this be global source count still?
+         (NumSrc_Loc-1)/3) !> WW: Convergence currently set using local source
+			   !!counts. 
 
     ! Report time
     if (rank == control_rank) write(timefile,"(A,F8.1)") &
          "Time before starting iteration: ", timestamp_wallclock ()
 
     ! Iterate to reach convergence for multiple sources
+    !> WW: Iteration to convergence now waits for each MPI
+    !! node to be converged before continuing.
+
     do
 
        ! Update xh if converged and exit
@@ -274,7 +278,8 @@ contains
 #ifdef MPI
           call MPI_ALLREDUCE(exit_status, exit_status_sum, 1, &
             MPI_INTEGER, MPI_SUM, MPI_COMM_NEW, mympierror)
-	  if(exit_status_sum .eq. npr)  exit
+	if(exit_status_sum .eq. npr)  exit !> WW: if all tasks are finished exit
+					    
 #endif
 
        ! Save current value of mean ionization fraction
@@ -513,10 +518,7 @@ contains
     !! edited do_grid_static so nodes now only
     !! process sources in their domains... 
 
-
        call do_grid_static(dt,niter)
-
-
 
 #ifdef MPI
 
@@ -990,21 +992,23 @@ contains
 
     ! WW: deprecated this
     !WW    if (periodic_bc) then
-!WW       lastpos_r(:)=srcpos(:,ns)+min(max_subbox,mesh(:)/2-1+mod(mesh(:),2))
-!WW       lastpos_l(:)=srcpos(:,ns)-min(max_subbox,mesh(:)/2)
-!WW    else
-!WW       lastpos_r(:)=min(srcpos(:,ns)+max_subbox,mesh(:))
-!WW       lastpos_l(:)=max(srcpos(:,ns)-max_subbox,1)
-!WW    endif
+    !WW       lastpos_r(:)=srcpos(:,ns)+min(max_subbox,mesh(:)/2-1+mod(mesh(:),2))
+    !WW       lastpos_l(:)=srcpos(:,ns)-min(max_subbox,mesh(:)/2)
+    !WW    else
+    !WW       lastpos_r(:)=min(srcpos(:,ns)+max_subbox,mesh(:))
+    !WW       lastpos_l(:)=max(srcpos(:,ns)-max_subbox,1)
+    !WW    endif
 
-! WW: THERE IS AN ISSUE WITH THE HANDEDNESS OF THE DOMAIN DECOMP...
+    
+    ! WW: NB the '-1' needs to be in here to make sure the bounds of the loops
+    ! are correct (position versus grid point ennumeration issue)
 
-lastpos_r(3) = (1+grid_struct(1))*mesh(1)
-lastpos_r(2) = (1+grid_struct(2))*mesh(2)
-lastpos_r(1) = (1+grid_struct(3))*mesh(3)
-lastpos_l(3) = (grid_struct(1))*mesh(1)
-lastpos_l(2) = (grid_struct(2))*mesh(2)
-lastpos_l(1) = (grid_struct(3))*mesh(3)
+    lastpos_r(1) = (1+grid_struct(1))*mesh(1)-1
+    lastpos_r(2) = (1+grid_struct(2))*mesh(2)-1
+    lastpos_r(3) = (1+grid_struct(3))*mesh(3)-1
+    lastpos_l(1) = (grid_struct(1))*mesh(1)
+    lastpos_l(2) = (grid_struct(2))*mesh(2)
+    lastpos_l(3) = (grid_struct(3))*mesh(3)
 
 
 ! TODO NEED TO SORT OUT THE LIMITS OF THE LOOP HERE. ALSO, WHAT

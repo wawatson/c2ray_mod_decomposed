@@ -76,7 +76,7 @@ contains
     if (rank == control_rank) then
 
        ! Set the number of redshift slices
-       NumZred=5
+       NumZred=6
        allocate(zred_array(NumZred))
 
        ! Time step
