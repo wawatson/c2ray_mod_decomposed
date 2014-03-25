@@ -1003,21 +1003,12 @@ contains
     ! WW: NB the '-1' needs to be in here to make sure the bounds of the loops
     ! are correct (position versus grid point ennumeration issue)
 
-<<<<<<< HEAD
     lastpos_r(1) = (1+grid_struct(1))*mesh(1)
     lastpos_r(2) = (1+grid_struct(2))*mesh(2)
     lastpos_r(3) = (1+grid_struct(3))*mesh(3)
     lastpos_l(1) = (grid_struct(1))*mesh(1)+1
     lastpos_l(2) = (grid_struct(2))*mesh(2)+1
     lastpos_l(3) = (grid_struct(3))*mesh(3)+1
-=======
-    lastpos_r(1) = (1+grid_struct(1))*mesh(1)-1
-    lastpos_r(2) = (1+grid_struct(2))*mesh(2)-1
-    lastpos_r(3) = (1+grid_struct(3))*mesh(3)-1
-    lastpos_l(1) = (grid_struct(1))*mesh(1)
-    lastpos_l(2) = (grid_struct(2))*mesh(2)
-    lastpos_l(3) = (grid_struct(3))*mesh(3)
->>>>>>> e12a0c0fb87b686ff4fc606027b955e9a83e8559
 
 
 ! TODO NEED TO SORT OUT THE LIMITS OF THE LOOP HERE. ALSO, WHAT
